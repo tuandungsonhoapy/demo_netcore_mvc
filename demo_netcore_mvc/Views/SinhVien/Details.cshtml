@@ -1,0 +1,55 @@
+﻿@model demo_netcore_mvc.Models.SinhVien
+
+<h2>Chi tiết sinh viên</h2>
+
+<div class="card p-3 mb-4">
+    <dl class="row">
+        <dt class="col-sm-3">Mã sinh viên</dt>
+        <dd class="col-sm-9">@Model.MaSV</dd>
+
+        <dt class="col-sm-3">Họ tên</dt>
+        <dd class="col-sm-9">@Model.HoTenSV</dd>
+
+        <dt class="col-sm-3">Khoa</dt>
+        <dd class="col-sm-9">@Model.Khoa?.TenKhoa</dd>
+
+        <dt class="col-sm-3">Năm sinh</dt>
+        <dd class="col-sm-9">@Model.NamSinh</dd>
+
+        <dt class="col-sm-3">Quê quán</dt>
+        <dd class="col-sm-9">@Model.QueQuan</dd>
+    </dl>
+</div>
+
+<h4>Danh sách đề tài tham gia</h4>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Mã đề tài</th>
+            <th>Tên đề tài</th>
+            <th>Giảng viên hướng dẫn</th>
+            <th>Kết quả</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.HuongDans != null && Model.HuongDans.Any())
+        {
+            foreach (var hd in Model.HuongDans)
+            {
+                <tr>
+                    <td>@hd.DeTai?.MaDT</td>
+                    <td>@hd.DeTai?.TenDT</td>
+                    <td>@hd.GiangVien?.HoTenGV</td>
+                    <td>@hd.KetQua</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="6" class="text-center">Sinh viên chưa tham gia đề tài nào</td>
+            </tr>
+        }
+    </tbody>
+</table>
+<a asp-action="Index" class="btn btn-secondary">Quay lại</a>

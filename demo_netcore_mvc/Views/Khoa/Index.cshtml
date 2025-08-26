@@ -1,0 +1,40 @@
+﻿@model IEnumerable<demo_netcore_mvc.Models.Khoa>
+
+<div>
+    <h2>Quản lý thông tin khoa</h2>
+    <p>
+        <a asp-action="Create" class="btn btn-primary">Thêm Khoa</a>
+    </p>
+    <table class="table table-striped table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Stt</th>
+                <th>Mã Khoa</th>
+                <th>Tên Khoa</th>
+                <th>Điện thoại</th>
+                <th style="width: 220px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                int stt = 1;
+            }
+            @foreach (var khoa in Model)
+            {
+                <tr>
+                    <td>@stt</td>
+                    <td>@khoa.MaKhoa</td>
+                    <td>@khoa.TenKhoa</td>
+                    <td>@khoa.DienThoai</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@khoa.MaKhoa" class="btn btn-info btn-sm">Chi tiết</a>
+                        <a asp-action="Edit" asp-route-id="@khoa.MaKhoa" class="btn btn-warning btn-sm">Sửa</a>
+                        <a asp-action="Delete" asp-route-id="@khoa.MaKhoa" class="btn btn-danger btn-sm"
+                           onclick="return confirm('Bạn có chắc chắn muốn xóa khoa này không?');">Xóa</a>
+                    </td>
+                </tr>
+                stt++;
+            }
+        </tbody>
+    </table>
+</div>

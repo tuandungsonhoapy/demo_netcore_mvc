@@ -1,0 +1,51 @@
+﻿body, html {
+    margin: 0;
+    padding: 0;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+}
+
+.sidebar {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Sidebar menu custom */
+.sidebar-menu .list-group-item {
+    font-size: 1.1rem; /* chữ to hơn */
+    font-weight: 500; /* chữ đậm nhẹ */
+    padding: 15px 20px; /* nút cao hơn */
+    border: none; /* bỏ border nhỏ mặc định */
+    width: 100%; /* full chiều rộng sidebar */
+    box-sizing: border-box;
+}
+
+    .sidebar-menu .list-group-item:hover {
+        background-color: #e9ecef; /* màu hover */
+        font-weight: 600;
+    }
+
+    .sidebar-menu .list-group-item.active {
+        background-color: #0d6efd !important; /* xanh Bootstrap */
+        color: white !important;
+        font-weight: 600;
+    }
+

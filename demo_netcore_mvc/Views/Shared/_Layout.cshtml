@@ -1,0 +1,76 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - demo_netcore_mvc</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/demo_netcore_mvc.styles.css" asp-append-version="true" />
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-light bg-dark navbar-dark border-bottom box-shadow">
+            <div class="container-fluid">
+                <a class="navbar-brand text-white" asp-area="" asp-controller="Home" asp-action="Index">demo_netcore_mvc</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNavbar"
+                        aria-controls="topNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="topNavbar">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 bg-light border-end min-vh-100 p-0">
+                <div class="list-group list-group-flush sidebar-menu">
+                    <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "SinhVien" ? "active" : "")"
+                       asp-controller="SinhVien" asp-action="Index">
+                        Quản lý sinh viên
+                    </a>
+                    <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Khoa" ? "active" : "")"
+                       asp-controller="Khoa" asp-action="Index">
+                        Quản lý khoa
+                    </a>
+                    <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "GiangVien" ? "active" : "")"
+                       asp-controller="GiangVien" asp-action="Index">
+                        Quản lý giảng viên
+                    </a>
+                    <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "DeTai" ? "active" : "")"
+                       asp-controller="DeTai" asp-action="Index">
+                        Quản lý đề tài
+                    </a>
+                </div>
+            </div>
+
+            <!-- Main content -->
+            <div class="col-md-9 col-lg-10 p-4">
+                <main role="main" class="pb-3">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <footer class="border-top footer text-muted mt-3">
+        <div class="container">
+            &copy; 2025 - demo_netcore_mvc
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

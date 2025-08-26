@@ -1,0 +1,35 @@
+﻿@model demo_netcore_mvc.ViewModels.AlertViewModel
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <link rel="stylesheet" href="~/css/alert.css" />
+
+    <div id="toast-alert" class="toast-container">
+        <div class="toast-item @Model.Type">
+            @Model.Message
+        </div>
+    </div>
+
+    <script>
+        // Hàm đóng toast
+        function closeToast() {
+            var el = document.getElementById("toast-alert");
+            if (el) {
+                el.style.transition = "opacity 0.5s ease"; // thêm transition
+                el.style.opacity = "0";
+                setTimeout(() => el.remove(), 500);
+            }
+        }
+
+        // Auto-hide sau 3 giây
+        setTimeout(closeToast, 3000);
+
+        // Click vào toast để đóng
+        document.getElementById("toast-alert").addEventListener("click", closeToast);
+    </script>
+}
+
+
+@* @section Styles {
+    <link rel="stylesheet" href="~/css/alert.css" />
+} *@

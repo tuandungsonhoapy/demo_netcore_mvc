@@ -1,0 +1,44 @@
+﻿@model demo_netcore_mvc.Models.SinhVien
+@{
+    ViewData["Title"] = "Thêm sinh viên";
+}
+
+<h2>Thêm sinh viên mới</h2>
+
+<form asp-action="Create" method="post">
+    <div class="form-group mb-3">
+        <label asp-for="HoTenSV" class="form-label"></label>
+        <input asp-for="HoTenSV" class="form-control" />
+        <span asp-validation-for="HoTenSV" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="NamSinh" class="form-label"></label>
+        <input asp-for="NamSinh" class="form-control" type="date" />
+        <span asp-validation-for="NamSinh" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="QueQuan" class="form-label"></label>
+        <input asp-for="QueQuan" class="form-control" />
+        <span asp-validation-for="QueQuan" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="MaKhoa" class="form-label">Khoa</label>
+        <select asp-for="MaKhoa" class="form-control"
+                asp-items="@(new SelectList((IEnumerable<demo_netcore_mvc.Models.Khoa>)ViewBag.ListKhoa, "MaKhoa", "TenKhoa"))">
+            <option value="">-- Chọn khoa --</option>
+        </select>
+        <span asp-validation-for="MaKhoa" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Lưu</button>
+    <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
