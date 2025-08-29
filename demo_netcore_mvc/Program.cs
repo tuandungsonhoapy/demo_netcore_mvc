@@ -1,7 +1,11 @@
 using demo_netcore_mvc.AppDBContext;
 using demo_netcore_mvc.IRepositories;
+using demo_netcore_mvc.IService;
 using demo_netcore_mvc.Repositories;
+using demo_netcore_mvc.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +17,23 @@ builder.Services.AddDbContext<AppDbContext>(
 builder.Services.AddScoped<IKhoaRepository, KhoaRepository>();
 builder.Services.AddScoped<IGiangVienRepository, GiangVienRepository>();
 builder.Services.AddScoped<ISinhVienRepository, SinhVienRepository>();
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<IHashingService, HashingService>();
+builder.Services.AddScoped<IDetaiRepository, DeTaiRepository>();
+builder.Services.AddScoped<IHuongDanRepository, HuongDanRepository>();
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromDays(1);
+        options.SlidingExpiration = true;
+    });
+
+// Set EPPlus license context
+ExcelPackage.License.SetNonCommercialPersonal("TuanDung");
 
 var app = builder.Build();
 
@@ -29,6 +50,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(

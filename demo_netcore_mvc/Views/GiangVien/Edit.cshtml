@@ -1,0 +1,40 @@
+﻿@model demo_netcore_mvc.Models.GiangVien
+@{
+    ViewData["Title"] = "Sửa giảng viên";
+    var listKhoa = ViewBag.ListKhoa as IEnumerable<demo_netcore_mvc.Models.Khoa>;
+}
+
+<h2>Sửa giảng viên</h2>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="MaGV" />
+
+    <div class="form-group mb-3">
+        <label asp-for="HoTenGV" class="form-label"></label>
+        <input asp-for="HoTenGV" class="form-control" />
+        <span asp-validation-for="HoTenGV" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="Luong" class="form-label"></label>
+        <input asp-for="Luong" class="form-control" type="number" />
+        <span asp-validation-for="Luong" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="MaKhoa" class="form-label">Khoa</label>
+        <select asp-for="MaKhoa" class="form-control" asp-items="@(new SelectList(listKhoa, "MaKhoa", "TenKhoa", Model.MaKhoa))">
+            <option value="">-- Chọn khoa --</option>
+        </select>
+        <span asp-validation-for="MaKhoa" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Lưu</button>
+    <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

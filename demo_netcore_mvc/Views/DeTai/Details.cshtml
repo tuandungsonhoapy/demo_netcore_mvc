@@ -1,0 +1,157 @@
+﻿@using demo_netcore_mvc.Helper
+@model demo_netcore_mvc.Models.DeTai
+
+@{
+    var deTaiStatus = Model.IsOpen ? "Mở đăng ký" : "Đóng đăng ký";
+
+    var maGvClaim = User.FindFirst("MaGV")?.Value;
+    int editedBy = 0;
+    if (!string.IsNullOrEmpty(maGvClaim))
+    {
+        int.TryParse(maGvClaim, out editedBy);
+    }
+
+    var isChamDiem = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("GiangVien") && Model.NguoiHuongDan == editedBy;
+}
+
+<h2>Chi tiết đề tài</h2>
+
+<div class="card p-3 mb-4">
+    <dl class="row">
+        <dt class="col-sm-3">Mã đề tài</dt>
+        <dd class="col-sm-9">@Model.MaDT</dd>
+
+        <dt class="col-sm-3">Tên đề tài</dt>
+        <dd class="col-sm-9">@Model.TenDT</dd>
+
+        <dt class="col-sm-3">Giảng viên hướng dẫn</dt>
+        <dd class="col-sm-9">@Model.GiangVien?.HoTenGV</dd>
+
+        <dt class="col-sm-3">Nơi thực tập</dt>
+        <dd class="col-sm-9">@Model.NoiThucTap</dd>
+
+        <dt class="col-sm-3">Kinh phí</dt>
+        <dd class="col-sm-9">@Model.KinhPhi</dd>
+
+        <dt class="col-sm-3">Tham gia</dt>
+        <dd class="col-sm-9">@Model.SoLuong/@Model.ToiDa</dd>
+
+        <dt class="col-sm-3">Học kỳ</dt>
+        <dd class="col-sm-9">@Model.HocKy</dd>
+
+        <dt class="col-sm-3">Năm học</dt>
+        <dd class="col-sm-9">@Model.NamHoc</dd>
+
+        <dt class="col-sm-3">Trạng thái</dt>
+        <dd class="col-sm-9">@deTaiStatus</dd>
+    </dl>
+</div>
+
+<div class="toolbar">
+    <h4>Danh sách sinh viên tham gia</h4>
+    <a asp-action="ExportExcel_DSSV" asp-route-MaDT="@Model.MaDT" class="btn btn-success">Xuất Excel</a>
+    <a asp-action="ExportWord_DSSV" asp-route-MaDT="@Model.MaDT" class="btn btn-primary">Xuất Word</a>
+</div>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Mã sinh</th>
+            <th>Tên sinh viên</th>
+            <th>Khoa</th>
+            <th>Kết quả</th>
+            <th style="width: 140px;"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.HuongDans != null && Model.HuongDans.Any())
+        {
+            foreach (var hd in Model.HuongDans)
+            {
+                <tr>
+                    <td>@hd.MaSV</td>
+                    <td>@hd.SinhVien?.HoTenSV</td>
+                    <td>@hd.SinhVien?.Khoa?.TenKhoa</td>
+                    <td>@hd.KetQua</td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-sm btn-primary btnChamDiem"
+                                data-masv="@hd.MaSV"
+                                data-hoten="@hd.SinhVien?.HoTenSV"
+                                data-khoa="@hd.SinhVien?.Khoa?.TenKhoa"
+                                data-ketqua="@hd.KetQua"
+                                data-madt="@Model.MaDT"
+                                @(isChamDiem ? "" : "disabled")
+                                data-bs-toggle="modal"
+                                data-bs-target="#chamDiemModal">
+                            Chấm điểm
+                        </button>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="6" class="text-center">Chưa có sinh viên nào tham gia</td>
+            </tr>
+        }
+    </tbody>
+</table>
+<a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+
+<!-- Modal Chấm Điểm -->
+<div class="modal fade" id="chamDiemModal" tabindex="-1" aria-labelledby="chamDiemModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="ChamDiem" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="chamDiemModalLabel">Chấm điểm sinh viên</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="MaGV" name="MaGV" value="@editedBy" />
+                    <input type="hidden" id="MaDT" name="MaDT" />
+                    <input type="hidden" id="MaSV" name="MaSV" />
+
+                    <p><b>Mã SV:</b> <span id="txtMaSV"></span></p>
+                    <p><b>Họ tên:</b> <span id="txtHoTen"></span></p>
+                    <p><b>Khoa:</b> <span id="txtKhoa"></span></p>
+                    <div class="form-group">
+                        <label for="KetQua">Điểm</label>
+                        <input type="number" step="0.01" class="form-control" id="KetQua" name="KetQua" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Xác nhận</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.btnChamDiem').forEach(btn => {
+            btn.addEventListener('click', function () {
+                let maSV = this.dataset.masv;
+                let hoTen = this.dataset.hoten;
+                let khoa = this.dataset.khoa;
+                let ketQua = this.dataset.ketqua;
+                let maDT = this.dataset.madt;
+
+                // set hidden input
+                document.getElementById('MaSV').value = maSV;
+                document.getElementById('MaDT').value = maDT;
+
+                // set text hiển thị
+                document.getElementById('txtMaSV').innerText = maSV;
+                document.getElementById('txtHoTen').innerText = hoTen;
+                document.getElementById('txtKhoa').innerText = khoa;
+
+                // set điểm nếu có
+                document.getElementById('KetQua').value = ketQua || "";
+            });
+        });
+    </script>
+}

@@ -1,10 +1,24 @@
 ﻿@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
-@model IEnumerable<demo_netcore_mvc.Models.GiangVien>
+@model demo_netcore_mvc.ViewModels.GiangVienViewModel
 
 <div>
     <h2>Quản lý thông tin giảng viên</h2>
+    <form method="get" asp-action="Index" class="row g-3 mb-3">
+        <div class="col-auto">
+            <label asp-for=MaKhoa" class="form-label">Khoa:</label>
+            <select asp-for="MaKhoa" asp-items="ViewBag.KhoaList" class="form-select">
+                <option value="">-- Tất cả --</option>
+            </select>
+        </div>
+
+        <div class="col-auto align-self-end">
+            <button type="submit" class="btn btn-primary">Lọc</button>
+            <a asp-action="ExportExcel" asp-route-MaKhoa="@Model.MaKhoa" class="btn btn-success">Xuất Excel</a>
+            <a asp-action="ExportWord" asp-route-MaKhoa="@Model.MaKhoa" class="btn btn-secondary">Xuất Word</a>
+        </div>
+    </form>
     <p>
         <a asp-action="Create" class="btn btn-primary">Thêm giảng viên</a>
     </p>
@@ -20,9 +34,9 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var gv in Model)
+            @foreach (var gv in Model.GiangViens)
             {
-                int index = Model.ToList().IndexOf(gv) + 1;
+                int index = Model.GiangViens.ToList().IndexOf(gv) + 1;
                 <tr>
                     <td>@index</td>
                     <td>@gv.MaGV</td>

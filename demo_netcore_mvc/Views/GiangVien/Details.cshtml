@@ -1,35 +1,31 @@
 ﻿@using demo_netcore_mvc.Helper
-@model demo_netcore_mvc.Models.SinhVien
+@model demo_netcore_mvc.Models.GiangVien
 
 <h2>Chi tiết sinh viên</h2>
 
 <div class="card p-3 mb-4">
     <dl class="row">
-        <dt class="col-sm-3">Mã sinh viên</dt>
-        <dd class="col-sm-9">@Model.MaSV</dd>
+        <dt class="col-sm-3">Mã giảng viên</dt>
+        <dd class="col-sm-9">@Model.MaGV</dd>
 
         <dt class="col-sm-3">Họ tên</dt>
-        <dd class="col-sm-9">@Model.HoTenSV</dd>
+        <dd class="col-sm-9">@Model.HoTenGV</dd>
 
         <dt class="col-sm-3">Khoa</dt>
         <dd class="col-sm-9">@Model.Khoa?.TenKhoa</dd>
 
-        <dt class="col-sm-3">Năm sinh</dt>
-        <dd class="col-sm-9">@DateHelper.FormatDate(Model.NamSinh)</dd>
-
-        <dt class="col-sm-3">Quê quán</dt>
-        <dd class="col-sm-9">@Model.QueQuan</dd>
+        <dt class="col-sm-3">Lương</dt>
+        <dd class="col-sm-9">@Model.Luong.ToString("C")</dd>
     </dl>
 </div>
 
-<h4>Danh sách đề tài tham gia</h4>
+<h4>Danh sách đề tài hướng dẫn</h4>
 <table class="table table-bordered">
     <thead>
         <tr>
             <th>Mã đề tài</th>
             <th>Tên đề tài</th>
-            <th>Giảng viên hướng dẫn</th>
-            <th>Kết quả</th>
+            <th>Số lượng tham gia</th>
         </tr>
     </thead>
     <tbody>
@@ -40,8 +36,7 @@
                 <tr>
                     <td>@hd.DeTai?.MaDT</td>
                     <td>@hd.DeTai?.TenDT</td>
-                    <td>@hd.GiangVien?.HoTenGV</td>
-                    <td>@hd.KetQua</td>
+                    <td>@($"{hd.DeTai?.SoLuong}/{hd.DeTai?.ToiDa}")</td>
                 </tr>
             }
         }

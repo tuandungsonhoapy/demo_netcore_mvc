@@ -16,6 +16,7 @@ namespace demo_netcore_mvc.AppDBContext
         public DbSet<SinhVien> SinhVien { get; set; }
         public DbSet<DeTai> DeTai { get; set; }
         public DbSet<HuongDan> HuongDan { get; set; }
+        public DbSet<Account> Account { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -32,6 +33,11 @@ namespace demo_netcore_mvc.AppDBContext
                 .WithMany(k => k.GiangViens)
                 .HasForeignKey(gv => gv.MaKhoa);
 
+            modelBuilder.Entity<GiangVien>()
+                .HasOne(gv => gv.Account)
+                .WithOne(a => a.GiangVien)
+                .HasForeignKey<GiangVien>(gv => gv.AccountId);
+
             // SinhVien
             modelBuilder.Entity<SinhVien>()
                 .HasKey(sv => sv.MaSV);
@@ -41,9 +47,19 @@ namespace demo_netcore_mvc.AppDBContext
                 .WithMany(k => k.SinhViens)
                 .HasForeignKey(sv => sv.MaKhoa);
 
+            modelBuilder.Entity<SinhVien>()
+                .HasOne(sv => sv.Account)
+                .WithOne(a => a.SinhVien)
+                .HasForeignKey<SinhVien>(sv => sv.AccountId);
+
             // DeTai
             modelBuilder.Entity<DeTai>()
                 .HasKey(dt => dt.MaDT);
+
+            modelBuilder.Entity<DeTai>()
+                .HasOne(dt => dt.GiangVien)
+                .WithMany(gv => gv.DeTais)
+                .HasForeignKey(dt => dt.NguoiHuongDan);
 
             // HuongDan
             modelBuilder.Entity<HuongDan>()
@@ -68,13 +84,41 @@ namespace demo_netcore_mvc.AppDBContext
             modelBuilder.Entity<GiangVienData>(entity =>
             {
                 entity.HasNoKey();
-                entity.ToView(null);
+            });
+
+            modelBuilder.Entity<GiangVienDetailData>(entity =>
+            {
+                entity.HasNoKey();
             });
 
             modelBuilder.Entity<SinhVienData>(entity =>
             {
                 entity.HasNoKey();
-                entity.ToView(null);
+            });
+
+            modelBuilder.Entity<AccountData>(entity =>
+            {
+                entity.HasNoKey();
+            });
+
+            modelBuilder.Entity<DeTaiData>(entity =>
+            {
+                entity.HasNoKey();
+            });
+
+            modelBuilder.Entity<DeTaiDetailData>(entity =>
+            {
+                entity.HasNoKey();
+            });
+
+            modelBuilder.Entity<NamHocData>(entity =>
+            {
+                entity.HasNoKey();
+            });
+
+            modelBuilder.Entity<SinhVien_DeTai_HK_Data>(entity =>
+            {
+                entity.HasNoKey();
             });
         }
     }

@@ -1,4 +1,10 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var isAdmin = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Admin");
+    var isGiangVien = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("GiangVien");
+    var isSinhVien = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("SinhVien");
+}
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -20,9 +26,23 @@
                 </button>
                 <div class="collapse navbar-collapse" id="topNavbar">
                     <ul class="navbar-nav ms-auto">
-                        <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <span class="nav-link text-white">Hello, @User.Identity.Name!</span>
+                            </li>
+                            <li class="nav-item">
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-link nav-link text-white">Đăng xuất</button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-area="" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>
@@ -34,22 +54,44 @@
             <!-- Sidebar -->
             <div class="col-md-3 col-lg-2 bg-light border-end min-vh-100 p-0">
                 <div class="list-group list-group-flush sidebar-menu">
-                    <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "SinhVien" ? "active" : "")"
-                       asp-controller="SinhVien" asp-action="Index">
-                        Quản lý sinh viên
-                    </a>
-                    <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Khoa" ? "active" : "")"
-                       asp-controller="Khoa" asp-action="Index">
-                        Quản lý khoa
-                    </a>
-                    <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "GiangVien" ? "active" : "")"
-                       asp-controller="GiangVien" asp-action="Index">
-                        Quản lý giảng viên
-                    </a>
-                    <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "DeTai" ? "active" : "")"
-                       asp-controller="DeTai" asp-action="Index">
-                        Quản lý đề tài
-                    </a>
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        @* <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Account" ? "active" : "")"
+                           asp-controller="Account" asp-action="Profile">
+                            Thông tin tài khoản
+                        </a> *@
+                    }
+                    
+                    @if (isAdmin)
+                    {
+                        <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Khoa" ? "active" : "")"
+                           asp-controller="Khoa" asp-action="Index">
+                            Quản lý khoa
+                        </a>
+                        <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "GiangVien" ? "active" : "")"
+                           asp-controller="GiangVien" asp-action="Index">
+                            Quản lý giảng viên
+                        </a>
+                    }
+                    @if (isAdmin || isGiangVien)
+                    {
+                        <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "SinhVien" ? "active" : "")"
+                           asp-controller="SinhVien" asp-action="Index">
+                            Quản lý sinh viên
+                        </a>
+
+                        <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "DeTai" ? "active" : "")"
+                           asp-controller="DeTai" asp-action="Index">
+                            Quản lý đề tài
+                        </a>
+                    }
+                    @if (isSinhVien)
+                    {
+                        <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "DeTai" ? "active" : "")"
+                           asp-controller="DeTai" asp-action="Index">
+                            Đăng ký đề tài
+                        </a>
+                    }
                 </div>
             </div>
 
@@ -62,11 +104,13 @@
         </div>
     </div>
 
-    <footer class="border-top footer text-muted mt-3">
+    @* <footer class="border-top footer text-muted mt-3">
         <div class="container">
             &copy; 2025 - demo_netcore_mvc
         </div>
-    </footer>
+    </footer> *@
+        
+    @await Component.InvokeAsync("Alert", new { type = TempData["AlertType"], message = TempData["AlertMessage"] })
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

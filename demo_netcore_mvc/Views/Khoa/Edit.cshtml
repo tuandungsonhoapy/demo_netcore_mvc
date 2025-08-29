@@ -1,0 +1,31 @@
+﻿@model demo_netcore_mvc.Models.Khoa
+@{
+    ViewData["Title"] = "Sửa thông tin khoa";
+}
+
+<h2>Sửa sinh viên (Mã Khoa: @Model.MaKhoa)</h2>
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="MaKhoa" />
+
+    <div class="form-group mb-3">
+        <label asp-for="TenKhoa" class="form-label"></label>
+        <input asp-for="TenKhoa" class="form-control" />
+        <span asp-validation-for="TenKhoa" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="DienThoai" class="form-label"></label>
+        <input asp-for="DienThoai" class="form-control" />
+        <span asp-validation-for="DienThoai" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Lưu</button>
+    <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

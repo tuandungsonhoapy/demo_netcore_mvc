@@ -37,7 +37,6 @@ namespace demo_netcore_mvc.Repositories
                 throw new Exception("Sinh viên không tồn tại.");
             }
         }
-
         public async Task<List<SinhVien>> GetAllAsync(object requestData)
         {
             var request = requestData as SinhVien_GetAll_Params;
@@ -51,40 +50,58 @@ namespace demo_netcore_mvc.Repositories
                 .AsNoTracking()
                 .ToListAsync();
 
-            var result = raw.Select(static sv => new SinhVien
-            {
-                MaSV = sv.MaSV,
-                HoTenSV = sv.HoTenSV,
-                NamSinh = sv.NamSinh,
-                QueQuan = sv.QueQuan,
-                MaKhoa = sv.MaKhoa,
-                Khoa = new Khoa
+            // Gom nhóm theo MaSV
+            var result = raw
+                .GroupBy(sv => sv.MaSV)
+                .Select(g =>
                 {
-                    MaKhoa = sv.MaKhoa,
-                    TenKhoa = sv.TenKhoa
-                },
-                HuongDans = new List<HuongDan>
-                {
-                    new HuongDan
+                    var first = g.First(); // lấy 1 record làm đại diện
+                    return new SinhVien
                     {
-                        MaSV = sv.MaSV,
-                        MaDT = sv.MaDT,
-                        KetQua = sv.KetQua,
-                        GiangVien = sv.MaGV.HasValue ? new GiangVien
+                        MaSV = first.MaSV,
+                        HoTenSV = first.HoTenSV,
+                        NamSinh = first.NamSinh,
+                        QueQuan = first.QueQuan,
+                        MaKhoa = first.MaKhoa,
+                        Khoa = new Khoa
                         {
-                            MaGV = sv.MaGV.Value,
-                            HoTenGV = sv.HoTenGV
-                        } : null,
-                        DeTai = sv.MaDT != null ? new DeTai
-                        {
-                            MaDT = sv.MaDT,
-                            TenDT = sv.TenDT
-                        } : null
-                    }
-                }
-            }).ToList();
+                            MaKhoa = first.MaKhoa,
+                            TenKhoa = first.TenKhoa
+                        },
+                        HuongDans = g
+                            .Where(x => x.MaDT != null || x.MaGV != null)
+                            .Select(x => new HuongDan
+                            {
+                                MaSV = x.MaSV,
+                                MaDT = x.MaDT,
+                                KetQua = x.KetQua,
+                                GiangVien = x.MaGV.HasValue ? new GiangVien
+                                {
+                                    MaGV = x.MaGV.Value,
+                                    HoTenGV = x.HoTenGV
+                                } : null,
+                                DeTai = x.MaDT != null ? new DeTai
+                                {
+                                    MaDT = x.MaDT,
+                                    TenDT = x.TenDT
+                                } : null
+                            })
+                            .ToList()
+                    };
+                })
+                .ToList();
 
             return result;
+        }
+
+        public async Task<SinhVien?> GetByAccountId(int accountId)
+        {
+            var raw = await _context.Set<SinhVien>()
+                .FromSqlRaw("EXEC SP_SinhVien_GetByAccountId @AccountId = {0}", accountId)
+                .AsNoTracking()
+                .ToListAsync();
+
+            return raw.FirstOrDefault();
         }
 
         public async Task<SinhVien?> GetByIdAsync(object id)
@@ -96,38 +113,45 @@ namespace demo_netcore_mvc.Repositories
                 .AsNoTracking()
                 .ToListAsync();
 
-            var sv = raw.Select(static sv => new SinhVien
-            {
-                MaSV = sv.MaSV,
-                HoTenSV = sv.HoTenSV,
-                NamSinh = sv.NamSinh,
-                QueQuan = sv.QueQuan,
-                MaKhoa = sv.MaKhoa,
-                Khoa = new Khoa
+            var sv = raw
+                .GroupBy(s => s.MaSV)
+                .Select(g =>
                 {
-                    MaKhoa = sv.MaKhoa,
-                    TenKhoa = sv.TenKhoa
-                },
-                HuongDans = new List<HuongDan>
-                {
-                    new HuongDan
+                    var first = g.First(); // lấy 1 record làm đại diện
+                    return new SinhVien
                     {
-                        MaSV = sv.MaSV,
-                        MaDT = sv.MaDT,
-                        KetQua = sv.KetQua,
-                        GiangVien = sv.MaGV.HasValue ? new GiangVien
+                        MaSV = first.MaSV,
+                        HoTenSV = first.HoTenSV,
+                        NamSinh = first.NamSinh,
+                        QueQuan = first.QueQuan,
+                        MaKhoa = first.MaKhoa,
+                        Khoa = new Khoa
                         {
-                            MaGV = sv.MaGV.Value,
-                            HoTenGV = sv.HoTenGV
-                        } : null,
-                        DeTai = sv.MaDT != null ? new DeTai
-                        {
-                            MaDT = sv.MaDT,
-                            TenDT = sv.TenDT
-                        } : null
-                    }
-                }
-            }).FirstOrDefault();
+                            MaKhoa = first.MaKhoa,
+                            TenKhoa = first.TenKhoa
+                        },
+                        HuongDans = g
+                            .Where(x => x.MaDT != null || x.MaGV != null)
+                            .Select(x => new HuongDan
+                            {
+                                MaSV = x.MaSV,
+                                MaDT = x.MaDT,
+                                KetQua = x.KetQua,
+                                GiangVien = x.MaGV.HasValue ? new GiangVien
+                                {
+                                    MaGV = x.MaGV.Value,
+                                    HoTenGV = x.HoTenGV
+                                } : null,
+                                DeTai = x.MaDT != null ? new DeTai
+                                {
+                                    MaDT = x.MaDT,
+                                    TenDT = x.TenDT
+                                } : null
+                            })
+                            .ToList()
+                    };
+                })
+                .FirstOrDefault();
 
             return sv;
         }

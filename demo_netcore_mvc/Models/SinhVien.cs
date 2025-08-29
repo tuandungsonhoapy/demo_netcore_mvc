@@ -19,7 +19,10 @@ namespace demo_netcore_mvc.Models
         [Display(Name = "Quê quán")]
         public string QueQuan { get; set; }
 
+        public int AccountId { get; set; }
+
         public Khoa? Khoa { get; set; }
         public ICollection<HuongDan>? HuongDans { get; set; }
+        public Account Account { get; set; }
     }
 }

@@ -49,3 +49,19 @@ body, html {
         font-weight: 600;
     }
 
+th {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+    .toolbar h4 {
+        margin: 0;
+    }
+

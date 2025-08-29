@@ -1,0 +1,156 @@
+﻿@model demo_netcore_mvc.ViewModels.DeTaiViewModel
+@using demo_netcore_mvc.Helper
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    var isSinhVien = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("SinhVien");
+    var maSvClaim = User.FindFirst("MaSV")?.Value;
+    int MaSV = 0;
+    if (!string.IsNullOrEmpty(maSvClaim))
+    {
+        int.TryParse(maSvClaim, out MaSV);
+    }
+    var isGiangVien = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("GiangVien");
+    var deTai = Model.DeTais;
+}
+<div>
+    @if (isSinhVien)
+    {
+        <h2>Đăng ký đề tài</h2>
+    }
+    else
+    {
+        <h2>Quản lý thông tin đề tài</h2>
+    }
+
+    <form method="get" asp-action="Index" class="row g-3 mb-3">
+        <div class="col-auto">
+            <label asp-for=MaGV" class="form-label">Giảng viên hướng dẫn:</label>
+            <select asp-for="MaGV" asp-items="ViewBag.GiangVienList" class="form-select">
+                <option value="">-- Tất cả --</option>
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <label asp-for=MaKhoa" class="form-label">Khoa:</label>
+            <select asp-for="MaKhoa" asp-items="ViewBag.KhoaList" class="form-select">
+                <option value="">-- Tất cả --</option>
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <label asp-for=NamHoc" class="form-label">Năm học:</label>
+            <select asp-for="NamHoc" asp-items="ViewBag.NamHocList" class="form-select">
+                <option value="">-- Tất cả --</option>
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <label asp-for=HocKy" class="form-label">Học kỳ:</label>
+            <select asp-for="HocKy" asp-items="ViewBag.HocKyList" class="form-select">
+                <option value="">-- Tất cả --</option>
+            </select>
+        </div>
+
+        <div class="col-auto align-self-end">
+            <button type="submit" class="btn btn-primary">Lọc</button>
+            <a asp-action="ExportExcel" asp-route-MaGV="@Model.MaGV" asp-route-MaKhoa="@Model.MaKhoa" asp-route-NamHoc="@Model.NamHoc" asp-route-HocKy="@Model.HocKy" class="btn btn-success">Xuất Excel</a>
+            <a asp-action="ExportWord" asp-route-MaGV="@Model.MaGV" asp-route-MaKhoa="@Model.MaKhoa" asp-route-NamHoc="@Model.NamHoc" asp-route-HocKy="@Model.HocKy" class="btn btn-secondary">Xuất Word</a>
+        </div>
+    </form>
+
+    @if (isGiangVien)
+    {
+        <p>
+            <a asp-action="Create" class="btn btn-primary">Thêm đề tài</a>
+        </p>
+    }
+
+    <!-- Table -->
+    <table class="table table-striped table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Stt</th>
+                <th>Mã đề tài</th>
+                <th>Tên đề tài</th>
+                <th>Kinh phí</th>
+                <th>Nơi thực tập</th>
+                <th>Tham gia</th>
+                <th>Giảng viên</th>
+                <th>Khoa</th>
+                <th>HK/Năm học</th>
+                <th style="width: 220px;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @{
+                int stt = 1;
+
+                var dtList = Model.DeTais;
+
+                if (isSinhVien)
+                {
+                    dtList = Model.DeTais.Where(dt => dt.IsOpen).ToList();
+                }
+            }
+            @foreach (var dt in dtList)
+            {
+                <tr>
+                    <td>@stt</td>
+                    <td>@dt.MaDT</td>
+                    <td>@dt.TenDT</td>
+                    <td>@dt.KinhPhi</td>
+                    <td>@dt.NoiThucTap</td>
+                    <td>@($"{dt.SoLuong}/{dt.ToiDa}")</td>
+                    <td>@dt.GiangVien?.HoTenGV</td>
+                    <td>@dt.GiangVien?.Khoa?.TenKhoa</td>
+                    <td>@dt.HocKy/@dt.NamHoc</td>
+                    <td>
+                        @if (isSinhVien)
+                        {
+                            var isRegistered = dt.HuongDans.Any(hd => hd.MaSV == MaSV);
+
+                            if (isRegistered)
+                            {
+                                <form asp-action="Unregister" asp-controller="DeTai" method="post" style="display:inline">
+                                    <input type="hidden" name="MaSV" value="@MaSV" />
+                                    <input type="hidden" name="MaGV" value="@dt.GiangVien?.MaGV" />
+                                    <input type="hidden" name="MaDT" value="@dt.MaDT" />
+                                    <button type="submit" class="btn btn-danger btn-sm">Hủy đăng ký</button>
+                                </form>
+                            }
+                            else if (dt.SoLuong >= dt.ToiDa)
+                            {
+                                <span class="text-danger" style="font-weight:bold">Đã đủ sinh viên</span>
+                            }
+                            else
+                            {
+                                <form asp-action="Register" asp-controller="DeTai" method="post" style="display:inline">
+                                    <input type="hidden" name="MaSV" value="@MaSV" />
+                                    <input type="hidden" name="MaGV" value="@dt.GiangVien?.MaGV" />
+                                    <input type="hidden" name="MaDT" value="@dt.MaDT" />
+                                    <button type="submit" class="btn btn-info btn-sm">Đăng ký</button>
+                                </form>
+                            }
+                        }
+                        else
+                        {
+                            <a asp-action="Details" asp-route-id="@dt.MaDT" class="btn btn-info btn-sm">Chi tiết</a>
+                            <a asp-action="Edit" asp-route-id="@dt.MaDT" class="btn btn-warning btn-sm">Sửa</a>
+
+                            <form id="deleteForm-@dt.MaDT" asp-action="Delete" asp-route-id="@dt.MaDT" method="post" style="display:none;">
+                                @Html.AntiForgeryToken()
+                            </form>
+
+                            <button class="btn btn-danger btn-sm"
+                                    onclick="if(confirm('Bạn có chắc chắn muốn xóa sinh viên này không?')) document.getElementById('deleteForm-@dt.MaDT').submit();">
+                                Xóa
+                            </button>
+                        }
+                    </td>
+                </tr>
+                stt++;
+            }
+        </tbody>
+    </table>
+</div>
