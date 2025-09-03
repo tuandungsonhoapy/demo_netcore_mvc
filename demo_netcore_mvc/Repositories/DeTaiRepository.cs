@@ -182,6 +182,62 @@ namespace demo_netcore_mvc.Repositories
             await this._context.SaveChangesAsync();
         }
 
+        public async Task<List<DeTai>> MyDeTai(DeTai_MyDeTai_Queries requestParams)
+        {
+            var raw = await this._context.Set<DeTaiData>()
+                .FromSqlRaw("EXEC SP_DeTai_MyDeTai @MaSV = {0}, @NamHoc = {1}, @HocKy = {2}", requestParams.MaSV, requestParams.NamHoc, requestParams.HocKy)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var result = raw
+                .GroupBy(dt => dt.MaDT)
+                .Select(g =>
+                {
+                    var first = g.First();
+                    return new DeTai
+                    {
+                        MaDT = first.MaDT,
+                        TenDT = first.TenDT,
+                        KinhPhi = first.KinhPhi,
+                        NoiThucTap = first.NoiThucTap,
+                        SoLuong = first.SoLuong,
+                        ToiDa = first.ToiDa,
+                        NamHoc = first.NamHoc,
+                        HocKy = first.HocKy,
+                        IsOpen = first.IsOpen ?? false,
+                        GiangVien = first.MaGV.HasValue ? new GiangVien
+                        {
+                            MaGV = first.MaGV.Value,
+                            HoTenGV = first.HoTenGV,
+                            Khoa = first.MaKhoa != null ? new Khoa
+                            {
+                                MaKhoa = first.MaKhoa,
+                                TenKhoa = first.TenKhoa
+                            } : null
+                        } : null,
+                        HuongDans = g
+                            .Where(x => x.MaGV != null && x.MaSV != null)
+                            .Select(x => new HuongDan
+                            {
+                                MaDT = x.MaDT,
+                                MaSV = x.MaSV ?? 0,
+                                GiangVien = x.MaGV.HasValue ? new GiangVien
+                                {
+                                    MaGV = x.MaGV.Value,
+                                    HoTenGV = x.HoTenGV,
+                                    Khoa = x.MaKhoa != null ? new Khoa
+                                    {
+                                        MaKhoa = x.MaKhoa,
+                                        TenKhoa = x.TenKhoa
+                                    } : null
+                                } : null,
+                            }).ToList()
+                    };
+                });
+
+            return result.ToList();
+        }
+
         public async Task UpdateAsync(DeTai obj)
         {
             var deTai = await this._context.DeTai.FindAsync(obj.MaDT);

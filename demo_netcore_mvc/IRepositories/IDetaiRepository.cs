@@ -1,5 +1,6 @@
 ﻿using demo_netcore_mvc.Models;
 using demo_netcore_mvc.ObjectData;
+using demo_netcore_mvc.RequestData;
 
 namespace demo_netcore_mvc.IRepositories
 {
@@ -8,5 +9,7 @@ namespace demo_netcore_mvc.IRepositories
         public Task<List<NamHocData>> GetAllNamHoc();
 
         public Task<List<SinhVien_DeTai_HK_Data>> GetSVThamGiaTheoKy(int MaSV, string NamHoc, byte HocKy);
+
+        public Task<List<DeTai>> MyDeTai(DeTai_MyDeTai_Queries requestParams);
     }
 }

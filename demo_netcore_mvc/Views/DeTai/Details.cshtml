@@ -43,7 +43,9 @@
         <dd class="col-sm-9">@Model.NamHoc</dd>
 
         <dt class="col-sm-3">Trạng thái</dt>
-        <dd class="col-sm-9">@deTaiStatus</dd>
+        <dd class="col-sm-9 fw-bold @(Model.IsOpen ? "text-success" : "text-danger")">
+            @deTaiStatus
+        </dd>
     </dl>
 </div>
 

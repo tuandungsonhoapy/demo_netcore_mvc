@@ -58,6 +58,29 @@ namespace demo_netcore_mvc.Controllers
             return View(model);
         }
 
+        public async Task<ActionResult> MyDeTai(DeTai_MyDeTai_Queries requestData)
+        {
+            var list = await _deTaiRepository.MyDeTai(requestData);
+
+            var model = new MyDeTaiViewModel
+            {
+                MaSV = requestData.MaSV,
+                NamHoc = requestData.NamHoc,
+                HocKy = requestData.HocKy,
+                DeTais = list
+            };
+
+            var namHocs = await this._deTaiRepository.GetAllNamHoc();
+
+            ViewBag.NamHocList = new SelectList(namHocs, "NamHoc", "NamHoc", requestData.NamHoc);
+
+            var hocKys = new List<byte> { 1, 2, 3 };
+
+            ViewBag.HocKyList = new SelectList(hocKys, requestData.HocKy);
+
+            return View(model);
+        }
+
         public async Task<ActionResult> ChamDiem(int MaSV, string MaDT, decimal KetQua, int MaGV)
         {
             var dt = await this._deTaiRepository.GetByIdAsync(MaDT);
@@ -309,7 +332,7 @@ namespace demo_netcore_mvc.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Unregister(DeTai_Unregister_Param requestData)
+        public async Task<ActionResult> Unregister(DeTai_Unregister_Param requestData, string returnAction)
         {
             try
             {
@@ -342,7 +365,7 @@ namespace demo_netcore_mvc.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(returnAction ?? nameof(Index), new { MaSV = requestData.MaSV });
         }
 
         [Authorize(Roles = "Admin,GiangVien")]

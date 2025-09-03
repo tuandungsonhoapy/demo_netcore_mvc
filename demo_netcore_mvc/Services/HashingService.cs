@@ -22,7 +22,6 @@ namespace demo_netcore_mvc.Services
                 return false;
             }
 
-            // Kiểm tra mật khẩu người dùng nhập với mật khẩu đã mã hóa
             return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
         }
     }

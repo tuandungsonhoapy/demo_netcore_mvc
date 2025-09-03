@@ -2,6 +2,15 @@
     var isAdmin = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Admin");
     var isGiangVien = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("GiangVien");
     var isSinhVien = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("SinhVien");
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+
+    var maSvClaim = User.FindFirst("MaSV")?.Value;
+    int MaSV = 0;
+    if (!string.IsNullOrEmpty(maSvClaim))
+    {
+        int.TryParse(maSvClaim, out MaSV);
+    }
 }
 
 <!DOCTYPE html>
@@ -64,32 +73,36 @@
                     
                     @if (isAdmin)
                     {
-                        <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Khoa" ? "active" : "")"
+                        <a class="list-group-item list-group-item-action @(currentController == "Khoa" ? "active" : "")"
                            asp-controller="Khoa" asp-action="Index">
                             Quản lý khoa
                         </a>
-                        <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "GiangVien" ? "active" : "")"
+                        <a class="list-group-item list-group-item-action @(currentController == "GiangVien" ? "active" : "")"
                            asp-controller="GiangVien" asp-action="Index">
                             Quản lý giảng viên
                         </a>
                     }
                     @if (isAdmin || isGiangVien)
                     {
-                        <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "SinhVien" ? "active" : "")"
+                        <a class="list-group-item list-group-item-action @(currentController == "SinhVien" ? "active" : "")"
                            asp-controller="SinhVien" asp-action="Index">
                             Quản lý sinh viên
                         </a>
 
-                        <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "DeTai" ? "active" : "")"
+                        <a class="list-group-item list-group-item-action @(currentController == "DeTai" ? "active" : "")"
                            asp-controller="DeTai" asp-action="Index">
                             Quản lý đề tài
                         </a>
                     }
                     @if (isSinhVien)
                     {
-                        <a class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "DeTai" ? "active" : "")"
+                        <a class="list-group-item list-group-item-action @(currentController == "DeTai" && currentAction == "Index" ? "active" : "")"
                            asp-controller="DeTai" asp-action="Index">
                             Đăng ký đề tài
+                        </a>
+                        <a class="list-group-item list-group-item-action @(currentController == "DeTai" && currentAction == "MyDeTai" ? "active" : "")"
+                           asp-controller="DeTai" asp-action="MyDeTai" asp-route-MaSV="@MaSV">
+                            Đề tài đã đăng ký
                         </a>
                     }
                 </div>
