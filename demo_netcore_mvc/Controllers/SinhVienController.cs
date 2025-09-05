@@ -1,6 +1,6 @@
-﻿using demo_netcore_mvc.IRepositories;
-using demo_netcore_mvc.Models;
+﻿using demo_netcore_mvc.Models;
 using demo_netcore_mvc.RequestData;
+using demo_netcore_mvc.UnitOfWork;
 using demo_netcore_mvc.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,21 +12,17 @@ namespace demo_netcore_mvc.Controllers
     [Authorize(Roles = "Admin,GiangVien")]
     public class SinhVienController : Controller
     {
-        private readonly ISinhVienRepository sinhVienRepository;
-        private readonly IKhoaRepository khoaRepository;
-        private readonly IGiangVienRepository giangVienRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public SinhVienController(ISinhVienRepository sinhVienRepository, IKhoaRepository khoaRepository, IGiangVienRepository giangVienRepository)
+        public SinhVienController(IUnitOfWork unitOfWork)
         {
-            this.sinhVienRepository = sinhVienRepository;
-            this.khoaRepository = khoaRepository;
-            this.giangVienRepository = giangVienRepository;
+            _unitOfWork = unitOfWork;
         }
 
         // GET: SinhVienController
         public async Task<ActionResult> Index(SinhVien_GetAll_Params queryParams)
         {
-            var list = await this.sinhVienRepository.GetAllAsync(queryParams);
+            var list = await this._unitOfWork.SinhVienRepository.GetAllAsync(queryParams);
 
             var model = new SinhVienViewModel
             {
@@ -36,51 +32,73 @@ namespace demo_netcore_mvc.Controllers
                 MaKhoa = queryParams.MaKhoa
             };
 
-            var giangViens = await this.giangVienRepository.GetAllAsync(new object());
+            var giangViens = await this._unitOfWork.GiangVienRepository.GetAllAsync(new object());
 
             ViewBag.GiangVienList = new SelectList(giangViens, "MaGV", "HoTenGV", queryParams.MaGV);
 
-            var khoas = await this.khoaRepository.GetAllAsync(new object());
+            var khoas = await this._unitOfWork.KhoaRepository.GetAllAsync(new object());
 
             ViewBag.KhoaList = new SelectList(khoas, "MaKhoa", "TenKhoa", queryParams.MaKhoa);
 
             return View(model);
         }
 
-        public async Task<IActionResult> ExportExcel(SinhVien_GetAll_Params queryParams)
+        public async Task<ActionResult> ExportExcel(SinhVien_GetAll_Params queryParams)
         {
-            var list = await this.sinhVienRepository.GetAllAsync(queryParams);
+            var list = await this._unitOfWork.SinhVienRepository.GetAllAsync(queryParams);
+            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "templates", "SinhVien_Template.xlsx");
 
-            using (var package = new ExcelPackage())
+            using (var package = new ExcelPackage(new FileInfo(templatePath)))
             {
-                var worksheet = package.Workbook.Worksheets.Add("DanhSachSinhVien");
+                var worksheet = package.Workbook.Worksheets[0];
+                if (worksheet == null)
+                {
+                    return BadRequest();
+                }
 
-                // Header
-                worksheet.Cells[1, 1].Value = "MSSV";
-                worksheet.Cells[1, 2].Value = "Họ tên";
-                worksheet.Cells[1, 3].Value = "Khoa";
-                worksheet.Cells[1, 4].Value = "Năm sinh";
-                worksheet.Cells[1, 5].Value = "Quê quán";
-
-                // Data
+                int colCount = worksheet.Dimension.End.Column;
+                int startRow = 2; // Dữ liệu bắt đầu từ hàng thứ 2
                 for (int i = 0; i < list.Count; i++)
                 {
                     var sv = list[i];
-                    worksheet.Cells[i + 2, 1].Value = sv.MaSV;
-                    worksheet.Cells[i + 2, 2].Value = sv.HoTenSV;
-                    worksheet.Cells[i + 2, 3].Value = sv.Khoa?.TenKhoa;
-                    worksheet.Cells[i + 2, 4].Value = sv.NamSinh.ToString("dd/MM/yyyy");
-                    worksheet.Cells[i + 2, 5].Value = sv.QueQuan;
-                }
+                    int row = startRow + i;
 
-                worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+                    for (int col = 1; col <= colCount; col++)
+                    {
+                        string header = worksheet.Cells[1, col].Text.Trim();
+
+                        switch (header)
+                        {
+                            case "MSSV":
+                            case "Mã số sinh viên":
+                                worksheet.Cells[row, col].Value = sv?.MaSV;
+                                break;
+                            case "Họ tên":
+                            case "Ho ten":
+                                worksheet.Cells[row, col].Value = sv?.HoTenSV;
+                                break;
+                            case "Khoa":
+                                worksheet.Cells[row, col].Value = sv?.Khoa?.TenKhoa;
+                                break;
+                            case "Năm sinh":
+                            case "Nam sinh":
+                                worksheet.Cells[row, col].Value = sv?.NamSinh.ToString("dd/MM/yyyy");
+                                break;
+                            case "Quê quán":
+                            case "Que quan":
+                                worksheet.Cells[row, col].Value = sv?.QueQuan;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
 
                 var stream = new MemoryStream();
                 package.SaveAs(stream);
                 stream.Position = 0;
 
                 string fileName = $"DanhSachSinhVien_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
-
                 return File(stream.ToArray(),
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     fileName);
@@ -89,7 +107,7 @@ namespace demo_netcore_mvc.Controllers
 
         public async Task<IActionResult> ExportWord(SinhVien_GetAll_Params queryParams)
         {
-            var list = await this.sinhVienRepository.GetAllAsync(queryParams);
+            var list = await this._unitOfWork.SinhVienRepository.GetAllAsync(queryParams);
             var htmlContent = "<html><head><meta charset='UTF-8'></head><body>";
             htmlContent += "<h2>Danh sách sinh viên</h2>";
             htmlContent += "<table border='1' cellpadding='5' cellspacing='0'>";
@@ -116,7 +134,7 @@ namespace demo_netcore_mvc.Controllers
         // GET: SinhVienController/Details/5
         public async Task<ActionResult> Details(int id)
         {
-            var sv = await this.sinhVienRepository.GetByIdAsync(id);
+            var sv = await this._unitOfWork.SinhVienRepository.GetByIdAsync(id);
 
             if (sv == null)
             {
@@ -129,7 +147,7 @@ namespace demo_netcore_mvc.Controllers
         // GET: SinhVienController/Create
         public async Task<ActionResult> Create()
         {
-            var listKhoa = await this.khoaRepository.GetAllAsync(new Object());
+            var listKhoa = await this._unitOfWork.KhoaRepository.GetAllAsync(new Object());
 
             ViewBag.ListKhoa = listKhoa;
 
@@ -143,10 +161,12 @@ namespace demo_netcore_mvc.Controllers
         {
             try
             {
-                await this.sinhVienRepository.InsertAsync(model);
+                await this._unitOfWork.SinhVienRepository.InsertAsync(model);
 
                 TempData["AlertMessage"] = "Thêm sinh viên thành công!";
                 TempData["AlertType"] = "success";
+
+                await this._unitOfWork.SaveChangesAsync();
 
                 return RedirectToAction(nameof(Index));
             }
@@ -157,7 +177,7 @@ namespace demo_netcore_mvc.Controllers
                 ModelState.AddModelError(string.Empty, "Lỗi khi thêm sinh viên: " + ex.Message);
             }
 
-            var listKhoa = await this.khoaRepository.GetAllAsync(new object());
+            var listKhoa = await this._unitOfWork.KhoaRepository.GetAllAsync(new object());
             ViewBag.ListKhoa = listKhoa;
 
             return View(model);
@@ -168,12 +188,12 @@ namespace demo_netcore_mvc.Controllers
         {
             try
             {
-                var sv = await this.sinhVienRepository.GetByIdAsync(id);
+                var sv = await this._unitOfWork.SinhVienRepository.GetByIdAsync(id);
                 if (sv == null)
                 {
                     return NotFound();
                 }
-                var listKhoa = await this.khoaRepository.GetAllAsync(new object());
+                var listKhoa = await this._unitOfWork.KhoaRepository.GetAllAsync(new object());
                 ViewBag.ListKhoa = listKhoa;
                 return View(sv);
             }
@@ -194,10 +214,12 @@ namespace demo_netcore_mvc.Controllers
         {
             try
             {
-                await this.sinhVienRepository.UpdateAsync(model);
+                await this._unitOfWork.SinhVienRepository.UpdateAsync(model);
 
                 TempData["AlertMessage"] = "Cập nhật sinh viên thành công!";
                 TempData["AlertType"] = "success";
+
+                await this._unitOfWork.SaveChangesAsync();
 
                 return RedirectToAction(nameof(Index));
             }
@@ -207,7 +229,7 @@ namespace demo_netcore_mvc.Controllers
                 TempData["AlertType"] = "error";
             }
 
-            var listKhoa = await this.khoaRepository.GetAllAsync(new object());
+            var listKhoa = await this._unitOfWork.KhoaRepository.GetAllAsync(new object());
             ViewBag.ListKhoa = listKhoa;
             return View(model);
         }
@@ -225,7 +247,9 @@ namespace demo_netcore_mvc.Controllers
         {
             try
             {
-                await this.sinhVienRepository.DeleteAsync(id);
+                await this._unitOfWork.SinhVienRepository.DeleteAsync(id);
+
+                await this._unitOfWork.SaveChangesAsync();
 
                 TempData["AlertMessage"] = "Xóa sinh viên thành công!";
                 TempData["AlertType"] = "success";

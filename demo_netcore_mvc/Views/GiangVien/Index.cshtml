@@ -8,14 +8,14 @@
     <form method="get" asp-action="Index" class="row g-3 mb-3">
         <div class="col-auto">
             <label asp-for=MaKhoa" class="form-label">Khoa:</label>
-            <select asp-for="MaKhoa" asp-items="ViewBag.KhoaList" class="form-select">
+            <select asp-for="MaKhoa" asp-items="ViewBag.KhoaList" class="form-select select2">
                 <option value="">-- Tất cả --</option>
             </select>
         </div>
 
         <div class="col-auto align-self-end">
             <button type="submit" class="btn btn-primary">Lọc</button>
-            <a asp-action="ExportExcel" asp-route-MaKhoa="@Model.MaKhoa" class="btn btn-success">Xuất Excel</a>
+            <a asp-action="ExportExcelSinhVienTheoTatCaGV" asp-route-MaKhoa="@Model.MaKhoa" class="btn btn-success">Xuất Excel</a>
             <a asp-action="ExportWord" asp-route-MaKhoa="@Model.MaKhoa" class="btn btn-secondary">Xuất Word</a>
         </div>
     </form>
@@ -46,8 +46,14 @@
                     <td>
                         <a asp-action="Details" asp-route-id="@gv.MaGV" class="btn btn-info btn-sm">Chi tiết</a>
                         <a asp-action="Edit" asp-route-id="@gv.MaGV" class="btn btn-warning btn-sm">Sửa</a>
-                        <a asp-action="Delete" asp-route-id="@gv.MaGV" class="btn btn-danger btn-sm"
-                           onclick="return confirm('Bạn có chắc chắn muốn xóa giảng viên này không?');">Xóa</a>
+                        <form id="deleteForm-@gv.MaGV" asp-action="Delete" asp-route-id="@gv.MaGV" method="post" style="display:none;">
+                            @Html.AntiForgeryToken()
+                        </form>
+
+                        <button class="btn btn-danger btn-sm"
+                                onclick="if(confirm('Bạn có chắc chắn muốn xóa giảng viên này không?')) document.getElementById('deleteForm-@gv.MaGV').submit();">
+                            Xóa
+                        </button>
                     </td>
                 </tr>
             }

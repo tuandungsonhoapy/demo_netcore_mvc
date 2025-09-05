@@ -29,21 +29,21 @@
         </tr>
     </thead>
     <tbody>
-        @if (Model.HuongDans != null && Model.HuongDans.Any())
+        @if (Model.DeTais != null && Model.DeTais.Any())
         {
-            foreach (var hd in Model.HuongDans)
+            foreach (var dt in Model.DeTais)
             {
                 <tr>
-                    <td>@hd.DeTai?.MaDT</td>
-                    <td>@hd.DeTai?.TenDT</td>
-                    <td>@($"{hd.DeTai?.SoLuong}/{hd.DeTai?.ToiDa}")</td>
+                    <td>@dt.MaDT</td>
+                    <td>@dt.TenDT</td>
+                    <td>@($"{dt?.SoLuong}/{dt?.ToiDa}")</td>
                 </tr>
             }
         }
         else
         {
             <tr>
-                <td colspan="6" class="text-center">Sinh viên chưa tham gia đề tài nào</td>
+                <td colspan="6" class="text-center">Giảng viên chưa hướng dẫn đề tài nào</td>
             </tr>
         }
     </tbody>

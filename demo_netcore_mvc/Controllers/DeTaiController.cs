@@ -1,6 +1,6 @@
-﻿using demo_netcore_mvc.IRepositories;
-using demo_netcore_mvc.Models;
+﻿using demo_netcore_mvc.Models;
 using demo_netcore_mvc.RequestData;
+using demo_netcore_mvc.UnitOfWork;
 using demo_netcore_mvc.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,23 +12,17 @@ namespace demo_netcore_mvc.Controllers
     [Authorize]
     public class DeTaiController : Controller
     {
-        private readonly IDetaiRepository _deTaiRepository;
-        private readonly IGiangVienRepository _giangVienRepository;
-        private readonly IKhoaRepository _khoaRepository;
-        private readonly IHuongDanRepository _huongDanRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public DeTaiController(IDetaiRepository deTaiRepository, IGiangVienRepository giangVienRepository, IKhoaRepository khoaRepository, IHuongDanRepository huongDanRepository)
+        public DeTaiController(IUnitOfWork unitOfWork)
         {
-            _deTaiRepository = deTaiRepository;
-            _giangVienRepository = giangVienRepository;
-            _khoaRepository = khoaRepository;
-            _huongDanRepository = huongDanRepository;
+            _unitOfWork = unitOfWork;
         }
 
         // GET: DeTaiContrller
         public async Task<ActionResult> Index(DeTai_GetAll_Param requestData)
         {
-            var list = await _deTaiRepository.GetAllAsync(requestData);
+            var list = await _unitOfWork.DeTaiRepository.GetAllAsync(requestData);
 
             var model = new DeTaiViewModel
             {
@@ -39,15 +33,15 @@ namespace demo_netcore_mvc.Controllers
                 NamHoc = requestData.NamHoc
             };
 
-            var giangViens = await this._giangVienRepository.GetAllAsync(new object());
+            var giangViens = await this._unitOfWork.GiangVienRepository.GetAllAsync(new object());
 
             ViewBag.GiangVienList = new SelectList(giangViens, "MaGV", "HoTenGV", requestData.MaGV);
 
-            var khoas = await this._khoaRepository.GetAllAsync(new object());
+            var khoas = await this._unitOfWork.KhoaRepository.GetAllAsync(new object());
 
             ViewBag.KhoaList = new SelectList(khoas, "MaKhoa", "TenKhoa", requestData.MaKhoa);
 
-            var namHocs = await this._deTaiRepository.GetAllNamHoc();
+            var namHocs = await this._unitOfWork.DeTaiRepository.GetAllNamHoc();
 
             ViewBag.NamHocList = new SelectList(namHocs, "NamHoc", "NamHoc", requestData.NamHoc);
 
@@ -60,7 +54,7 @@ namespace demo_netcore_mvc.Controllers
 
         public async Task<ActionResult> MyDeTai(DeTai_MyDeTai_Queries requestData)
         {
-            var list = await _deTaiRepository.MyDeTai(requestData);
+            var list = await _unitOfWork.DeTaiRepository.MyDeTai(requestData);
 
             var model = new MyDeTaiViewModel
             {
@@ -70,7 +64,60 @@ namespace demo_netcore_mvc.Controllers
                 DeTais = list
             };
 
-            var namHocs = await this._deTaiRepository.GetAllNamHoc();
+            var namHocs = await this._unitOfWork.DeTaiRepository.GetAllNamHoc();
+
+            ViewBag.NamHocList = new SelectList(namHocs, "NamHoc", "NamHoc", requestData.NamHoc);
+
+            var hocKys = new List<byte> { 1, 2, 3 };
+
+            ViewBag.HocKyList = new SelectList(hocKys, requestData.HocKy);
+
+            return View(model);
+        }
+
+        public async Task<ActionResult> DeTaiThamGia(DeTai_MyDeTai_Queries requestData)
+        {
+
+            var list = await _unitOfWork.DeTaiRepository.MyDeTai(requestData);
+
+            var model = new MyDeTaiViewModel
+            {
+                MaSV = requestData.MaSV,
+                NamHoc = requestData.NamHoc,
+                HocKy = requestData.HocKy,
+                DeTais = list
+            };
+
+            var namHocs = await this._unitOfWork.DeTaiRepository.GetAllNamHoc();
+
+            ViewBag.NamHocList = new SelectList(namHocs, "NamHoc", "NamHoc", requestData.NamHoc);
+
+            var hocKys = new List<byte> { 1, 2, 3 };
+
+            ViewBag.HocKyList = new SelectList(hocKys, requestData.HocKy);
+
+            return View(model);
+        }
+
+        public async Task<ActionResult> DeTaiHuongDan(DeTai_GetAll_Param requestData)
+        {
+            if (requestData.MaGV == null || requestData.MaGV == 0)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var list = await this._unitOfWork.DeTaiRepository.GetAllAsync(requestData);
+
+            var model = new DeTaiViewModel
+            {
+                DeTais = list,
+                MaGV = requestData.MaGV,
+                MaKhoa = requestData.MaKhoa,
+                HocKy = requestData.HocKy,
+                NamHoc = requestData.NamHoc
+            };
+
+            var namHocs = await this._unitOfWork.DeTaiRepository.GetAllNamHoc();
 
             ViewBag.NamHocList = new SelectList(namHocs, "NamHoc", "NamHoc", requestData.NamHoc);
 
@@ -83,7 +130,7 @@ namespace demo_netcore_mvc.Controllers
 
         public async Task<ActionResult> ChamDiem(int MaSV, string MaDT, decimal KetQua, int MaGV)
         {
-            var dt = await this._deTaiRepository.GetByIdAsync(MaDT);
+            var dt = await this._unitOfWork.DeTaiRepository.GetByIdAsync(MaDT);
 
             if (dt == null)
             {
@@ -103,12 +150,14 @@ namespace demo_netcore_mvc.Controllers
 
             try
             {
-                await this._huongDanRepository.UpdateAsync(new HuongDan
+                await this._unitOfWork.HuongDanRepository.UpdateAsync(new HuongDan
                 {
                     MaDT = MaDT,
                     MaSV = MaSV,
                     KetQua = KetQua
                 });
+
+                await this._unitOfWork.SaveChangesAsync();
             }
             catch
             {
@@ -123,44 +172,77 @@ namespace demo_netcore_mvc.Controllers
 
         public async Task<ActionResult> ExportExcel(DeTai_GetAll_Param queryParams)
         {
-            var list = await this._deTaiRepository.GetAllAsync(queryParams);
+            var list = await this._unitOfWork.DeTaiRepository.GetAllAsync(queryParams);
+            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "templates", "DeTai_Template.xlsx");
 
-            using (var package = new ExcelPackage())
+            using (var package = new ExcelPackage(new FileInfo(templatePath)))
             {
-                var worksheet = package.Workbook.Worksheets.Add("DanhSachDeTai");
+                var worksheet = package.Workbook.Worksheets[0];
+                if (worksheet == null)
+                {
+                    return BadRequest("Không tìm thấy sheet 'DanhSachDeTai' trong template.");
+                }
 
-                // Header
-                worksheet.Cells[1, 1].Value = "Mã đề tài";
-                worksheet.Cells[1, 2].Value = "Tên đề tài";
-                worksheet.Cells[1, 3].Value = "Kinh phí";
-                worksheet.Cells[1, 4].Value = "Nơi thực tập";
-                worksheet.Cells[1, 5].Value = "Tham gia";
-                worksheet.Cells[1, 6].Value = "Giảng viên";
-                worksheet.Cells[1, 7].Value = "Khoa";
-                worksheet.Cells[1, 8].Value = "HK/Năm học";
-
-                // Data
+                int colCount = worksheet.Dimension.End.Column;
+                int startRow = 2; // Dữ liệu bắt đầu từ hàng thứ 2
                 for (int i = 0; i < list.Count; i++)
                 {
                     var dt = list[i];
-                    worksheet.Cells[i + 2, 1].Value = dt.MaDT;
-                    worksheet.Cells[i + 2, 2].Value = dt.TenDT;
-                    worksheet.Cells[i + 2, 3].Value = dt.KinhPhi;
-                    worksheet.Cells[i + 2, 4].Value = dt.NoiThucTap;
-                    worksheet.Cells[i + 2, 5].Value = $"{dt.SoLuong}/{dt.ToiDa}";
-                    worksheet.Cells[i + 2, 6].Value = dt.GiangVien?.HoTenGV;
-                    worksheet.Cells[i + 2, 7].Value = dt.GiangVien?.Khoa?.TenKhoa;
-                    worksheet.Cells[i + 2, 8].Value = $"{dt.HocKy}/{dt.NamHoc}";
-                }
+                    int row = startRow + i;
 
-                worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
+                    for (int col = 1; col <= colCount; col++)
+                    {
+                        string header = worksheet.Cells[1, col].Text.Trim();
+
+                        switch (header)
+                        {
+                            case "Mã đề tài":
+                            case "Ma de tai":
+                                worksheet.Cells[row, col].Value = dt.MaDT;
+                                break;
+                            case "Tên đề tài":
+                            case "Ten de tai":
+                                worksheet.Cells[row, col].Value = dt.TenDT;
+                                break;
+                            case "Kinh phí":
+                            case "Kinh phi":
+                                worksheet.Cells[row, col].Value = dt.KinhPhi;
+                                break;
+                            case "Nơi thực tập":
+                            case "Noi thuc tap":
+                                worksheet.Cells[row, col].Value = dt.NoiThucTap;
+                                break;
+                            case "Tham gia":
+                            case "Tham gia/Toi da":
+                                worksheet.Cells[row, col].Value = $"{dt.SoLuong}/{dt.ToiDa}";
+                                break;
+                            case "Giảng viên":
+                            case "Giang vien":
+                                worksheet.Cells[row, col].Value = dt.GiangVien?.HoTenGV;
+                                break;
+                            case "Khoa":
+                                worksheet.Cells[row, col].Value = dt.GiangVien?.Khoa?.TenKhoa;
+                                break;
+                            case "Học kỳ":
+                            case "Hoc ky":
+                                worksheet.Cells[row, col].Value = dt.HocKy;
+                                break;
+                            case "Năm học":
+                            case "Nam hoc":
+                                worksheet.Cells[row, col].Value = dt.NamHoc;
+                                break;
+                            default:
+                                // Nếu header không khớp với bất kỳ trường nào, giữ nguyên giá trị trong ô
+                                break;
+                        }
+                    }
+                }
 
                 var stream = new MemoryStream();
                 package.SaveAs(stream);
                 stream.Position = 0;
 
                 string fileName = $"DanhSachDeTai_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
-
                 return File(stream.ToArray(),
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     fileName);
@@ -169,7 +251,7 @@ namespace demo_netcore_mvc.Controllers
 
         public async Task<ActionResult> ExportExcel_DSSV(string MaDT)
         {
-            var deTai = await this._deTaiRepository.GetByIdAsync(MaDT);
+            var deTai = await this._unitOfWork.DeTaiRepository.GetByIdAsync(MaDT);
 
             if (deTai == null)
             {
@@ -216,7 +298,7 @@ namespace demo_netcore_mvc.Controllers
 
         public async Task<ActionResult> ExportWord(DeTai_GetAll_Param queryParams)
         {
-            var list = await this._deTaiRepository.GetAllAsync(queryParams);
+            var list = await this._unitOfWork.DeTaiRepository.GetAllAsync(queryParams);
 
             var htmlContent = "<html><head><meta charset='UTF-8'></head><body>";
             htmlContent += "<h2>Danh sách đề tài</h2>";
@@ -247,7 +329,7 @@ namespace demo_netcore_mvc.Controllers
 
         public async Task<ActionResult> ExportWord_DSSV(string MaDT)
         {
-            var deTai = await this._deTaiRepository.GetByIdAsync(MaDT);
+            var deTai = await this._unitOfWork.DeTaiRepository.GetByIdAsync(MaDT);
 
             if (deTai == null)
             {
@@ -284,7 +366,7 @@ namespace demo_netcore_mvc.Controllers
         [HttpPost]
         public async Task<ActionResult> Register(DeTai_Register_Body requestData)
         {
-            var deTai = await this._deTaiRepository.GetByIdAsync(requestData.MaDT);
+            var deTai = await this._unitOfWork.DeTaiRepository.GetByIdAsync(requestData.MaDT);
 
             if (deTai == null)
             {
@@ -302,7 +384,7 @@ namespace demo_netcore_mvc.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var luongThamGiaDeTaiTheoKy = await this._deTaiRepository.GetSVThamGiaTheoKy(requestData.MaSV, deTai.NamHoc, (byte)deTai.HocKy);
+            var luongThamGiaDeTaiTheoKy = await this._unitOfWork.DeTaiRepository.GetSVThamGiaTheoKy(requestData.MaSV, deTai.NamHoc, (byte)deTai.HocKy);
 
             if (luongThamGiaDeTaiTheoKy.Count > 0)
             {
@@ -318,12 +400,14 @@ namespace demo_netcore_mvc.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            await this._huongDanRepository.InsertAsync(new Models.HuongDan
+            await this._unitOfWork.HuongDanRepository.InsertAsync(new Models.HuongDan
             {
                 MaDT = requestData.MaDT,
                 MaSV = requestData.MaSV,
                 MaGV = requestData.MaGV
             });
+
+            await this._unitOfWork.SaveChangesAsync();
 
             TempData["AlertMessage"] = "Đăng ký đề tài thành công.";
             TempData["AlertType"] = "success";
@@ -336,7 +420,7 @@ namespace demo_netcore_mvc.Controllers
         {
             try
             {
-                var deTai = await this._deTaiRepository.GetByIdAsync(requestData.MaDT);
+                var deTai = await this._unitOfWork.DeTaiRepository.GetByIdAsync(requestData.MaDT);
 
                 if (deTai == null)
                 {
@@ -353,7 +437,9 @@ namespace demo_netcore_mvc.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                await this._huongDanRepository.DeleteAsync(requestData);
+                await this._unitOfWork.HuongDanRepository.DeleteAsync(requestData);
+
+                await this._unitOfWork.SaveChangesAsync();
 
                 TempData["AlertMessage"] = "Hủy đăng ký thành công!";
                 TempData["AlertType"] = "success";
@@ -370,9 +456,11 @@ namespace demo_netcore_mvc.Controllers
 
         [Authorize(Roles = "Admin,GiangVien")]
         // GET: DeTaiContrller/Details/5
-        public async Task<ActionResult> Details(string id)
+        public async Task<ActionResult> Details(string id, string returnUrl)
         {
-            var deTai = await this._deTaiRepository.GetByIdAsync(id);
+            var deTai = await this._unitOfWork.DeTaiRepository.GetByIdAsync(id);
+
+            ViewBag.ReturnUrl = returnUrl ?? Url.Action("Index");
 
             return View(deTai);
         }
@@ -392,7 +480,7 @@ namespace demo_netcore_mvc.Controllers
         {
             try
             {
-                await this._deTaiRepository.InsertAsync(model);
+                await this._unitOfWork.DeTaiRepository.InsertAsync(model);
 
                 TempData["AlertMessage"] = "Thêm mới đề tài thành công!";
                 TempData["AlertType"] = "success";
@@ -410,9 +498,9 @@ namespace demo_netcore_mvc.Controllers
 
         // GET: DeTaiContrller/Edit/5
         [Authorize(Roles = "Admin,GiangVien")]
-        public async Task<ActionResult> Edit(string id)
+        public async Task<ActionResult> Edit(string id, string returnUrl)
         {
-            var deTai = await this._deTaiRepository.GetByIdAsync(id);
+            var deTai = await this._unitOfWork.DeTaiRepository.GetByIdAsync(id);
 
             if (deTai == null)
             {
@@ -421,6 +509,8 @@ namespace demo_netcore_mvc.Controllers
 
                 return RedirectToAction(nameof(Index));
             }
+
+            ViewBag.ReturnUrl = returnUrl ?? Url.Action("Index");
 
             return View(deTai);
         }
@@ -440,10 +530,13 @@ namespace demo_netcore_mvc.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                await this._deTaiRepository.UpdateAsync(model);
+                await this._unitOfWork.DeTaiRepository.UpdateAsync(model);
+
+                await this._unitOfWork.SaveChangesAsync();
 
                 TempData["AlertMessage"] = "Cập nhật đề tài thành công!";
                 TempData["AlertType"] = "success";
+
 
                 return RedirectToAction(nameof(Index));
             }

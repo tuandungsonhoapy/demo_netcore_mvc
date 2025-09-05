@@ -1,5 +1,5 @@
-﻿using demo_netcore_mvc.IRepositories;
-using demo_netcore_mvc.Models;
+﻿using demo_netcore_mvc.Models;
+using demo_netcore_mvc.UnitOfWork;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
@@ -9,24 +9,24 @@ namespace demo_netcore_mvc.Controllers
     [Authorize(Roles = "Admin")]
     public class KhoaController : Controller
     {
-        private readonly IKhoaRepository _khoaRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public KhoaController(IKhoaRepository khoaRepository)
+        public KhoaController(IUnitOfWork unitOfWork)
         {
-            _khoaRepository = khoaRepository;
+            _unitOfWork = unitOfWork;
         }
 
         // GET: KhoaController
         public async Task<IActionResult> Index()
         {
-            var list = await _khoaRepository.GetAllAsync(new object());
+            var list = await _unitOfWork.KhoaRepository.GetAllAsync(new object());
 
             return View(list);
         }
 
         public async Task<IActionResult> ExportExcel()
         {
-            var list = await _khoaRepository.GetAllAsync(new object());
+            var list = await _unitOfWork.KhoaRepository.GetAllAsync(new object());
 
             using (var package = new ExcelPackage())
             {
@@ -53,7 +53,7 @@ namespace demo_netcore_mvc.Controllers
 
         public async Task<IActionResult> ExportWord()
         {
-            var list = await _khoaRepository.GetAllAsync(new object());
+            var list = await _unitOfWork.KhoaRepository.GetAllAsync(new object());
 
             // Xuất file Word
             var htmlContent = "<html><head><meta charset='UTF-8'></head><body>";
@@ -80,7 +80,7 @@ namespace demo_netcore_mvc.Controllers
         // GET: KhoaController/Details/5
         public async Task<IActionResult> Details(string id)
         {
-            var khoa = await _khoaRepository.GetByIdAsync(id);
+            var khoa = await _unitOfWork.KhoaRepository.GetByIdAsync(id);
             if (khoa == null)
             {
                 return NotFound();
@@ -106,10 +106,12 @@ namespace demo_netcore_mvc.Controllers
 
             try
             {
-                await _khoaRepository.InsertAsync(model);
+                await _unitOfWork.KhoaRepository.InsertAsync(model);
 
                 TempData["AlertMessage"] = "Thêm khoa thành công!";
                 TempData["AlertType"] = "success";
+
+                await _unitOfWork.SaveChangesAsync();
 
                 return RedirectToAction(nameof(Index));
             }
@@ -128,7 +130,7 @@ namespace demo_netcore_mvc.Controllers
         {
             try
             {
-                var khoa = await _khoaRepository.GetByIdAsync(id.ToString());
+                var khoa = await _unitOfWork.KhoaRepository.GetByIdAsync(id.ToString());
 
                 if (khoa == null)
                 {
@@ -154,10 +156,12 @@ namespace demo_netcore_mvc.Controllers
         {
             try
             {
-                await this._khoaRepository.UpdateAsync(model);
+                await this._unitOfWork.KhoaRepository.UpdateAsync(model);
 
                 TempData["AlertMessage"] = "Cập nhật khoa thành công!";
                 TempData["AlertType"] = "success";
+
+                await _unitOfWork.SaveChangesAsync();
 
                 return RedirectToAction(nameof(Index));
             }
@@ -184,10 +188,12 @@ namespace demo_netcore_mvc.Controllers
         {
             try
             {
-                await this._khoaRepository.DeleteAsync(id);
+                await this._unitOfWork.KhoaRepository.DeleteAsync(id);
 
                 TempData["AlertMessage"] = "Xóa khoa thành công!";
                 TempData["AlertType"] = "success";
+
+                await _unitOfWork.SaveChangesAsync();
 
                 return RedirectToAction(nameof(Index));
             }

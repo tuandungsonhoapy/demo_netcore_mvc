@@ -20,7 +20,6 @@ namespace demo_netcore_mvc.Models
 
         [Display(Name = "Tối đa")]
         public int? ToiDa { get; set; }
-        public int? SoLuong { get; set; }
 
         [Display(Name = "Năm học")]
         public string? NamHoc { get; set; }
@@ -36,5 +35,8 @@ namespace demo_netcore_mvc.Models
 
         public ICollection<HuongDan> HuongDans { get; set; }
         public GiangVien GiangVien { get; set; }
+
+        [NotMapped]
+        public int SoLuong => HuongDans?.Count ?? 0;
     }
 }

@@ -3,7 +3,6 @@
 @using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
-    var isSinhVien = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("SinhVien");
     var maSvClaim = User.FindFirst("MaSV")?.Value;
     int MaSV = 0;
     if (!string.IsNullOrEmpty(maSvClaim))
@@ -13,7 +12,7 @@
     var deTai = Model.DeTais;
 }
 <div>
-        <h2>Đề tài đã đăng ký</h2>
+    <h2>Đề tài đã tham gia</h2>
 
 
     <form method="get" asp-action="MyDeTai" class="row g-3 mb-3">
@@ -53,22 +52,19 @@
                 <th>Giảng viên</th>
                 <th>Khoa</th>
                 <th>HK/Năm học</th>
-                <th style="width: 220px;"></th>
+                <th>Điểm</th>
             </tr>
         </thead>
         <tbody>
             @{
                 int stt = 1;
 
-                var dtList = Model.DeTais;
-
-                if (isSinhVien)
-                {
-                    dtList = Model.DeTais.Where(dt => dt.IsOpen).ToList();
-                }
+                var dtList = Model.DeTais.Where(dt => !dt.IsOpen).ToList();
             }
             @foreach (var dt in dtList)
             {
+                var kq = dt.HuongDans.FirstOrDefault(hd => hd.MaSV == MaSV)?.KetQua;
+
                 <tr>
                     <td>@stt</td>
                     <td>@dt.MaDT</td>
@@ -80,21 +76,7 @@
                     <td>@dt.GiangVien?.Khoa?.TenKhoa</td>
                     <td>@dt.HocKy/@dt.NamHoc</td>
                     <td>
-                        @{
-                            var isRegistered = dt.HuongDans.Any(hd => hd.MaSV == MaSV);
-
-                            if (isRegistered && dt.IsOpen)
-                            {
-                                <form asp-action="Unregister" asp-controller="DeTai" method="post" style="display:inline">
-                                    <input type="hidden" name="MaSV" value="@MaSV" />
-                                    <input type="hidden" name="MaGV" value="@dt.GiangVien?.MaGV" />
-                                    <input type="hidden" name="MaDT" value="@dt.MaDT" />
-                                    <input type="hidden" name="returnAction" value="MyDeTai" />
-                                    <input type="hidden" name="returnMaSV" value="@MaSV" />
-                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Bạn có chắc chắn muốn hủy đăng ký không?')">Hủy đăng ký</button>
-                                </form>
-                            }
-                        }
+                        @kq
                     </td>
                 </tr>
                 stt++;

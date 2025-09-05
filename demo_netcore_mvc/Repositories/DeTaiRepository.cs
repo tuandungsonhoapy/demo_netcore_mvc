@@ -1,5 +1,4 @@
 ﻿using demo_netcore_mvc.AppDBContext;
-using demo_netcore_mvc.Helper;
 using demo_netcore_mvc.IRepositories;
 using demo_netcore_mvc.Models;
 using demo_netcore_mvc.ObjectData;
@@ -27,63 +26,26 @@ namespace demo_netcore_mvc.Repositories
         {
             var request = requestData as DeTai_GetAll_Param;
 
-            var maGV = DbHelper.ToDbValue(request?.MaGV);
-            var maKhoa = DbHelper.ToDbValue(request?.MaKhoa);
-            var namHoc = DbHelper.ToDbValue(request?.NamHoc);
-            var hocKy = DbHelper.ToDbValue(request?.HocKy);
+            var query = _context.DeTai
+                .Include(dt => dt.GiangVien)
+                    .ThenInclude(gv => gv.Khoa)
+                .Include(dt => dt.HuongDans)
+                    .ThenInclude(hd => hd.SinhVien)
+                .AsQueryable();
 
-            var raw = await this._context.Set<DeTaiData>()
-                .FromSqlRaw("EXEC SP_DeTai_GetAll @MaGV = {0}, @MaKhoa = {1}, @NamHoc = {2}, @HocKy = {3}", maGV, maKhoa, namHoc, hocKy)
-                .AsNoTracking()
-                .ToListAsync();
+            if (request?.MaGV != null)
+                query = query.Where(dt => dt.GiangVien != null && dt.GiangVien.MaGV == request.MaGV);
 
-            var result = raw
-                .GroupBy(dt => dt.MaDT)
-                .Select(g =>
-                {
-                    var first = g.First();
-                    return new DeTai
-                    {
-                        MaDT = first.MaDT,
-                        TenDT = first.TenDT,
-                        KinhPhi = first.KinhPhi,
-                        NoiThucTap = first.NoiThucTap,
-                        SoLuong = first.SoLuong,
-                        ToiDa = first.ToiDa,
-                        NamHoc = first.NamHoc,
-                        HocKy = first.HocKy,
-                        IsOpen = first.IsOpen ?? false,
-                        GiangVien = first.MaGV.HasValue ? new GiangVien
-                        {
-                            MaGV = first.MaGV.Value,
-                            HoTenGV = first.HoTenGV,
-                            Khoa = first.MaKhoa != null ? new Khoa
-                            {
-                                MaKhoa = first.MaKhoa,
-                                TenKhoa = first.TenKhoa
-                            } : null
-                        } : null,
-                        HuongDans = g
-                            .Where(x => x.MaGV != null && x.MaSV != null)
-                            .Select(x => new HuongDan
-                            {
-                                MaDT = x.MaDT,
-                                MaSV = x.MaSV ?? 0,
-                                GiangVien = x.MaGV.HasValue ? new GiangVien
-                                {
-                                    MaGV = x.MaGV.Value,
-                                    HoTenGV = x.HoTenGV,
-                                    Khoa = x.MaKhoa != null ? new Khoa
-                                    {
-                                        MaKhoa = x.MaKhoa,
-                                        TenKhoa = x.TenKhoa
-                                    } : null
-                                } : null,
-                            }).ToList()
-                    };
-                });
+            if (!string.IsNullOrEmpty(request?.MaKhoa))
+                query = query.Where(dt => dt.GiangVien != null && dt.GiangVien.MaKhoa == request.MaKhoa);
 
-            return result.ToList();
+            if (!string.IsNullOrEmpty(request?.NamHoc))
+                query = query.Where(dt => dt.NamHoc == request.NamHoc);
+
+            if (request?.HocKy != null)
+                query = query.Where(dt => dt.HocKy == request.HocKy);
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
         public async Task<List<NamHocData>> GetAllNamHoc()
@@ -100,142 +62,54 @@ namespace demo_netcore_mvc.Repositories
         {
             var maDT = id.ToString();
 
-            var raw = await this._context.Set<DeTaiDetailData>()
-                .FromSqlRaw("EXEC SP_DeTai_GetById @MaDT = {0}", maDT)
+            return await _context.DeTai
+                .Include(dt => dt.GiangVien)
+                    .ThenInclude(gv => gv.Khoa)
+                .Include(dt => dt.HuongDans)
+                    .ThenInclude(hd => hd.SinhVien)
+                        .ThenInclude(sv => sv.Khoa)
                 .AsNoTracking()
-                .ToListAsync();
-
-            var result = raw
-                .GroupBy(dt => dt.MaDT)
-                .Select(g =>
-                {
-                    var first = g.First();
-                    return new DeTai
-                    {
-                        MaDT = first.MaDT,
-                        TenDT = first.TenDT,
-                        KinhPhi = first.KinhPhi,
-                        NoiThucTap = first.NoiThucTap,
-                        SoLuong = first.SoLuong,
-                        ToiDa = first.ToiDa,
-                        NamHoc = first.NamHoc,
-                        HocKy = first.HocKy,
-                        IsOpen = first.IsOpen ?? false,
-                        NguoiHuongDan = first.NguoiHuongDan ?? 0,
-                        GiangVien = first.MaGV.HasValue ? new GiangVien
-                        {
-                            MaGV = first.MaGV.Value,
-                            HoTenGV = first.HoTenGV,
-                            Khoa = first.MaKhoa != null ? new Khoa
-                            {
-                                MaKhoa = first.MaKhoa,
-                                TenKhoa = first.TenKhoa
-                            } : null
-                        } : null,
-                        HuongDans = g
-                            .Where(x => x.MaGV != null && x.MaSV.HasValue)
-                            .Select(x => new HuongDan
-                            {
-                                MaDT = x.MaDT,
-                                MaSV = x.MaSV.HasValue ? x.MaSV.Value : 0,
-                                KetQua = x.KetQua,
-                                GiangVien = x.MaGV.HasValue ? new GiangVien
-                                {
-                                    MaGV = x.MaGV.Value,
-                                    HoTenGV = x.HoTenGV,
-                                    Khoa = x.MaKhoa != null ? new Khoa
-                                    {
-                                        MaKhoa = x.MaKhoa,
-                                        TenKhoa = x.TenKhoa
-                                    } : null
-                                } : null,
-                                SinhVien = x.MaSV.HasValue ? new SinhVien
-                                {
-                                    MaSV = x.MaSV.Value,
-                                    HoTenSV = x.HoTenSV,
-                                    Khoa = x.MaKhoa != null ? new Khoa
-                                    {
-                                        MaKhoa = x.MaKhoa,
-                                        TenKhoa = x.TenKhoa
-                                    } : null
-                                } : null
-                            }).ToList()
-                    };
-                }).FirstOrDefault();
-
-            return result;
+                .FirstOrDefaultAsync(dt => dt.MaDT == maDT);
         }
 
-        public async Task<List<SinhVien_DeTai_HK_Data>> GetSVThamGiaTheoKy(int MaSV, string NamHoc, byte HocKy)
+        public async Task<List<DeTai>> GetSVThamGiaTheoKy(int MaSV, string NamHoc, byte HocKy)
         {
-            var raw = await this._context.Set<SinhVien_DeTai_HK_Data>()
-                .FromSqlRaw("EXEC SP_DeTai_SVThamGiaTheoKy @MaSV = {0}, @NamHoc = {1}, @HocKy = {2}", MaSV, NamHoc, HocKy)
+            return await _context.DeTai
+                .Where(dt => dt.NamHoc == NamHoc
+                          && dt.HocKy == HocKy
+                          && dt.HuongDans.Any(hd => hd.MaSV == MaSV))
+                .Include(dt => dt.GiangVien)
+                    .ThenInclude(gv => gv.Khoa)
+                .Include(dt => dt.HuongDans)
+                    .ThenInclude(h => h.SinhVien)
                 .AsNoTracking()
                 .ToListAsync();
-
-            return raw;
         }
+
 
         public async Task InsertAsync(DeTai obj)
         {
             await this._context.DeTai.AddAsync(obj);
-            await this._context.SaveChangesAsync();
         }
 
         public async Task<List<DeTai>> MyDeTai(DeTai_MyDeTai_Queries requestParams)
         {
-            var raw = await this._context.Set<DeTaiData>()
-                .FromSqlRaw("EXEC SP_DeTai_MyDeTai @MaSV = {0}, @NamHoc = {1}, @HocKy = {2}", requestParams.MaSV, requestParams.NamHoc, requestParams.HocKy)
-                .AsNoTracking()
-                .ToListAsync();
+            var query = this._context.DeTai
+                .Include(dt => dt.GiangVien)
+                    .ThenInclude(gv => gv.Khoa)
+                .Include(dt => dt.HuongDans)
+                    .ThenInclude(hd => hd.SinhVien)
+                    .ThenInclude(sv => sv.Khoa)
+                .Where(dt => dt.HuongDans.Any(hd => hd.MaSV == requestParams.MaSV))
+                .AsQueryable();
 
-            var result = raw
-                .GroupBy(dt => dt.MaDT)
-                .Select(g =>
-                {
-                    var first = g.First();
-                    return new DeTai
-                    {
-                        MaDT = first.MaDT,
-                        TenDT = first.TenDT,
-                        KinhPhi = first.KinhPhi,
-                        NoiThucTap = first.NoiThucTap,
-                        SoLuong = first.SoLuong,
-                        ToiDa = first.ToiDa,
-                        NamHoc = first.NamHoc,
-                        HocKy = first.HocKy,
-                        IsOpen = first.IsOpen ?? false,
-                        GiangVien = first.MaGV.HasValue ? new GiangVien
-                        {
-                            MaGV = first.MaGV.Value,
-                            HoTenGV = first.HoTenGV,
-                            Khoa = first.MaKhoa != null ? new Khoa
-                            {
-                                MaKhoa = first.MaKhoa,
-                                TenKhoa = first.TenKhoa
-                            } : null
-                        } : null,
-                        HuongDans = g
-                            .Where(x => x.MaGV != null && x.MaSV != null)
-                            .Select(x => new HuongDan
-                            {
-                                MaDT = x.MaDT,
-                                MaSV = x.MaSV ?? 0,
-                                GiangVien = x.MaGV.HasValue ? new GiangVien
-                                {
-                                    MaGV = x.MaGV.Value,
-                                    HoTenGV = x.HoTenGV,
-                                    Khoa = x.MaKhoa != null ? new Khoa
-                                    {
-                                        MaKhoa = x.MaKhoa,
-                                        TenKhoa = x.TenKhoa
-                                    } : null
-                                } : null,
-                            }).ToList()
-                    };
-                });
+            if (!string.IsNullOrEmpty(requestParams?.NamHoc))
+                query = query.Where(dt => dt.NamHoc == requestParams.NamHoc);
 
-            return result.ToList();
+            if (requestParams?.HocKy != null)
+                query = query.Where(dt => dt.HocKy == requestParams.HocKy);
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
         public async Task UpdateAsync(DeTai obj)
@@ -252,7 +126,6 @@ namespace demo_netcore_mvc.Repositories
                 deTai.HocKy = obj.HocKy;
                 deTai.NguoiHuongDan = obj.NguoiHuongDan;
                 deTai.IsOpen = obj.IsOpen;
-                await this._context.SaveChangesAsync();
             }
         }
     }

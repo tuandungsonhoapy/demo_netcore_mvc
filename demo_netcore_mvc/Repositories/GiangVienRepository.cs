@@ -1,8 +1,6 @@
 ﻿using demo_netcore_mvc.AppDBContext;
-using demo_netcore_mvc.Helper;
 using demo_netcore_mvc.IRepositories;
 using demo_netcore_mvc.Models;
-using demo_netcore_mvc.ObjectData;
 using demo_netcore_mvc.RequestData;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,90 +17,74 @@ namespace demo_netcore_mvc.Repositories
             _context = context;
         }
 
-        public Task DeleteAsync(object id)
+        public async Task DeleteAsync(object id)
         {
-            throw new NotImplementedException();
+            var giangVien = await this._context.GiangVien.
+                Include(gv => gv.DeTais)
+                    .ThenInclude(dt => dt.HuongDans)
+                .FirstOrDefaultAsync(gv => gv.MaGV == (int)id);
+
+            if (giangVien?.DeTais != null && giangVien?.DeTais.Where(dt => dt.IsOpen).Count() > 0)
+            {
+                throw new Exception("Giảng viên đang hướng dẫn đề tài, không thể xóa");
+            }
+
+            if (giangVien != null)
+            {
+                this._context.GiangVien.Remove(giangVien);
+                this._context.Account.Remove(await this._context.Account.FindAsync(giangVien.AccountId));
+            }
+            else
+            {
+                throw new Exception("Giảng viên không tồn tại");
+            }
         }
 
         public async Task<List<GiangVien>> GetAllAsync(object requestData)
         {
             var request = requestData as GiangVien_GetAll_Param;
 
-            var MaKhoa = DbHelper.ToDbValue(request?.MaKhoa);
+            var result = this._context.GiangVien
+                .Include(gv => gv.Khoa)
+                .Include(gv => gv.DeTais)
+                    .ThenInclude(dt => dt.HuongDans)
+                        .ThenInclude(hd => hd.SinhVien)
+                            .ThenInclude(sv => sv.Khoa)
+                .AsQueryable();
 
-            var raw = await _context.Set<GiangVienData>()
-                .FromSqlRaw("EXEC SP_GiangVien_GetAll @MaKhoa = {0}", MaKhoa)
-                .AsNoTracking()
-                .ToListAsync();
-
-            var result = raw.Select(gv => new GiangVien
+            if (!string.IsNullOrEmpty(request?.MaKhoa))
             {
-                MaGV = gv.MaGV,
-                HoTenGV = gv.HoTenGV,
-                Luong = gv.Luong,
-                MaKhoa = gv.MaKhoa,
-                Khoa = new Khoa
-                {
-                    MaKhoa = gv.MaKhoa,
-                    TenKhoa = gv.TenKhoa,
-                }
-            }).ToList();
+                result = result.Where(gv => gv.MaKhoa == request.MaKhoa);
+            }
 
-            return result;
+            return await result.AsNoTracking().ToListAsync();
         }
 
         public async Task<GiangVien?> GetByAccountId(int accountId)
         {
-            var raw = await _context.Set<GiangVien>()
-                .FromSqlRaw("EXEC SP_GiangVien_GetByAccountId @AccountId = {0}", accountId)
-                .AsNoTracking()
-                .ToListAsync();
+            var result = await this._context.GiangVien
+                .Include(gv => gv.Khoa)
+                .Include(gv => gv.DeTais)
+                    .ThenInclude(dt => dt.HuongDans)
+                .FirstOrDefaultAsync(gv => gv.AccountId == accountId);
 
-            return raw.FirstOrDefault();
+            return result;
         }
 
         public async Task<GiangVien?> GetByIdAsync(object id)
         {
-            int MaGV = (int)id;
+            var query = await this._context.GiangVien
+                .Include(gv => gv.Khoa)
+                .Include(gv => gv.DeTais)
+                    .ThenInclude(dt => dt.HuongDans)
+                .FirstOrDefaultAsync(gv => gv.MaGV == (int)id);
 
-            var raw = await this._context.Set<GiangVienDetailData>()
-                .FromSqlRaw("EXEC SP_GiangVien_GetById @MaGV = {0}", MaGV)
-                .AsNoTracking()
-                .ToListAsync();
-
-            var giangVien = raw.GroupBy(gv => gv.MaGV)
-                .Select(GiangVienData => new GiangVien
-                {
-                    MaGV = GiangVienData.Key,
-                    HoTenGV = GiangVienData.First().HoTenGV,
-                    Luong = GiangVienData.First().Luong,
-                    MaKhoa = GiangVienData.First().MaKhoa,
-                    Khoa = new Khoa
-                    {
-                        MaKhoa = GiangVienData.First().MaKhoa,
-                        TenKhoa = GiangVienData.First().TenKhoa
-                    },
-                    HuongDans = GiangVienData
-                        .Where(x => x.MaDT != null)
-                        .Select(x => new HuongDan
-                        {
-                            DeTai = x.MaDT != null ? new DeTai
-                            {
-                                MaDT = x.MaDT,
-                                TenDT = x.TenDT,
-                                ToiDa = x.ToiDa,
-                                SoLuong = x.SoLuong
-                            } : null
-                        })
-                        .ToList()
-                }).FirstOrDefault();
-
-            return giangVien;
+            return query;
         }
 
-        public Task InsertAsync(GiangVien obj)
+        public async Task InsertAsync(GiangVien obj)
         {
-            throw new NotImplementedException();
+            await this._context.GiangVien.AddAsync(obj);
         }
 
         public async Task UpdateAsync(GiangVien obj)
@@ -117,8 +99,6 @@ namespace demo_netcore_mvc.Repositories
             giangVien.Luong = obj.Luong;
             giangVien.HoTenGV = obj.HoTenGV;
             giangVien.MaKhoa = obj.MaKhoa;
-
-            await _context.SaveChangesAsync();
         }
     }
 }

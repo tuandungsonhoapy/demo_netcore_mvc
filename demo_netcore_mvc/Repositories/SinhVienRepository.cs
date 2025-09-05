@@ -1,8 +1,6 @@
 ﻿using demo_netcore_mvc.AppDBContext;
-using demo_netcore_mvc.Helper;
 using demo_netcore_mvc.IRepositories;
 using demo_netcore_mvc.Models;
-using demo_netcore_mvc.ObjectData;
 using demo_netcore_mvc.RequestData;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,7 +28,6 @@ namespace demo_netcore_mvc.Repositories
                 _context.HuongDan.RemoveRange(huongDans);
 
                 _context.SinhVien.Remove(existingSinhVien);
-                await _context.SaveChangesAsync();
             }
             else
             {
@@ -41,119 +38,54 @@ namespace demo_netcore_mvc.Repositories
         {
             var request = requestData as SinhVien_GetAll_Params;
 
-            var maGV = DbHelper.ToDbValue(request?.MaGV);
-            var maDT = DbHelper.ToDbValue(request?.MaDT);
-            var maKhoa = DbHelper.ToDbValue(request?.MaKhoa);
+            var query = this._context.SinhVien
+                .Include(sv => sv.Khoa)
+                .Include(sv => sv.HuongDans)
+                    .ThenInclude(hd => hd.DeTai)
+                        .ThenInclude(dt => dt.GiangVien)
+                .AsQueryable();
 
-            var raw = await this._context.Set<SinhVienData>()
-                .FromSqlRaw("EXEC SP_SinhVien_GetAll @MaGV = {0}, @MaDT = {1}, @MaKhoa = {2}", maGV, maDT, maKhoa)
-                .AsNoTracking()
-                .ToListAsync();
+            // Lọc theo MaGV (Giảng viên hướng dẫn)
+            if (request?.MaGV != null && request?.MaGV != 0)
+            {
+                query = query.Where(sv => sv.HuongDans != null && sv.HuongDans.Any(hd => hd.DeTai != null && hd.DeTai.GiangVien != null && hd.DeTai.GiangVien.MaGV == request.MaGV));
+            }
 
-            // Gom nhóm theo MaSV
-            var result = raw
-                .GroupBy(sv => sv.MaSV)
-                .Select(g =>
-                {
-                    var first = g.First(); // lấy 1 record làm đại diện
-                    return new SinhVien
-                    {
-                        MaSV = first.MaSV,
-                        HoTenSV = first.HoTenSV,
-                        NamSinh = first.NamSinh,
-                        QueQuan = first.QueQuan,
-                        MaKhoa = first.MaKhoa,
-                        Khoa = new Khoa
-                        {
-                            MaKhoa = first.MaKhoa,
-                            TenKhoa = first.TenKhoa
-                        },
-                        HuongDans = g
-                            .Where(x => x.MaDT != null || x.MaGV != null)
-                            .Select(x => new HuongDan
-                            {
-                                MaSV = x.MaSV,
-                                MaDT = x.MaDT,
-                                KetQua = x.KetQua,
-                                GiangVien = x.MaGV.HasValue ? new GiangVien
-                                {
-                                    MaGV = x.MaGV.Value,
-                                    HoTenGV = x.HoTenGV
-                                } : null,
-                                DeTai = x.MaDT != null ? new DeTai
-                                {
-                                    MaDT = x.MaDT,
-                                    TenDT = x.TenDT
-                                } : null
-                            })
-                            .ToList()
-                    };
-                })
-                .ToList();
+            // Lọc theo MaDT (Đề tài)
+            if (request?.MaDT != null)
+            {
+                query = query.Where(sv => sv.HuongDans != null && sv.HuongDans.Any(hd => hd.MaDT == request.MaDT));
+            }
 
-            return result;
+            // Lọc theo MaKhoa (Khoa)
+            if (request?.MaKhoa != null)
+            {
+                query = query.Where(sv => sv.MaKhoa == request.MaKhoa);
+            }
+
+            return await query.AsNoTracking().ToListAsync();
         }
 
         public async Task<SinhVien?> GetByAccountId(int accountId)
         {
-            var raw = await _context.Set<SinhVien>()
-                .FromSqlRaw("EXEC SP_SinhVien_GetByAccountId @AccountId = {0}", accountId)
+            return await _context.SinhVien
+                .Include(sv => sv.Khoa)
+                .Include(sv => sv.HuongDans)
+                    .ThenInclude(hd => hd.DeTai)
+                        .ThenInclude(dt => dt.GiangVien)
                 .AsNoTracking()
-                .ToListAsync();
-
-            return raw.FirstOrDefault();
+                .FirstOrDefaultAsync(sv => sv.AccountId == accountId);
         }
 
         public async Task<SinhVien?> GetByIdAsync(object id)
         {
-            int MaSV = (int)id;
-
-            var raw = await this._context.Set<SinhVienData>()
-                .FromSqlRaw("EXEC SP_SinhVien_GetById @MaSV = {0}", MaSV)
+            return await _context.SinhVien
+                .Include(sv => sv.Khoa)
+                .Include(sv => sv.HuongDans)
+                    .ThenInclude(hd => hd.DeTai)
+                        .ThenInclude(dt => dt.GiangVien)
                 .AsNoTracking()
-                .ToListAsync();
-
-            var sv = raw
-                .GroupBy(s => s.MaSV)
-                .Select(g =>
-                {
-                    var first = g.First(); // lấy 1 record làm đại diện
-                    return new SinhVien
-                    {
-                        MaSV = first.MaSV,
-                        HoTenSV = first.HoTenSV,
-                        NamSinh = first.NamSinh,
-                        QueQuan = first.QueQuan,
-                        MaKhoa = first.MaKhoa,
-                        Khoa = new Khoa
-                        {
-                            MaKhoa = first.MaKhoa,
-                            TenKhoa = first.TenKhoa
-                        },
-                        HuongDans = g
-                            .Where(x => x.MaDT != null || x.MaGV != null)
-                            .Select(x => new HuongDan
-                            {
-                                MaSV = x.MaSV,
-                                MaDT = x.MaDT,
-                                KetQua = x.KetQua,
-                                GiangVien = x.MaGV.HasValue ? new GiangVien
-                                {
-                                    MaGV = x.MaGV.Value,
-                                    HoTenGV = x.HoTenGV
-                                } : null,
-                                DeTai = x.MaDT != null ? new DeTai
-                                {
-                                    MaDT = x.MaDT,
-                                    TenDT = x.TenDT
-                                } : null
-                            })
-                            .ToList()
-                    };
-                })
-                .FirstOrDefault();
-
-            return sv;
+                .FirstOrDefaultAsync(sv => sv.MaSV == (int)id);
         }
 
         public async Task InsertAsync(SinhVien obj)
@@ -175,10 +107,6 @@ namespace demo_netcore_mvc.Repositories
                 existingSinhVien.NamSinh = obj.NamSinh;
                 existingSinhVien.QueQuan = obj.QueQuan;
                 existingSinhVien.MaKhoa = obj.MaKhoa;
-
-                // existingSinhVien.Khoa = obj.Khoa;
-
-                await _context.SaveChangesAsync();
             }
             else
             {

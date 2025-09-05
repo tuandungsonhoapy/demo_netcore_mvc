@@ -28,12 +28,11 @@ namespace demo_netcore_mvc.Repositories
                 throw new Exception("Không thể xóa Khoa vì còn dữ liệu liên quan (Sinh viên hoặc Giảng viên).");
 
             _context.Khoa.Remove(khoa);
-            await _context.SaveChangesAsync();
         }
 
         public async Task<List<Khoa>> GetAllAsync(object requestData)
         {
-            return await _context.Khoa.FromSqlRaw("EXECUTE SP_Khoa_GetAll").ToListAsync();
+            return await _context.Khoa.AsNoTracking().ToListAsync();
         }
 
         public async Task<Khoa?> GetByIdAsync(object id)
@@ -43,11 +42,7 @@ namespace demo_netcore_mvc.Repositories
             if (maKhoa == null)
                 return null;
 
-            var result = await _context.Khoa
-                .FromSqlRaw("EXEC SP_Khoa_GetKhoaById @p0", parameters: maKhoa)
-                .ToListAsync();
-
-            return result.FirstOrDefault();
+            return await _context.Khoa.AsNoTracking().FirstOrDefaultAsync(k => k.MaKhoa == maKhoa);
         }
 
         public async Task InsertAsync(Khoa obj)
@@ -58,7 +53,6 @@ namespace demo_netcore_mvc.Repositories
                 throw new Exception($"Khoa có mã hoặc tên đã tồn tại.");
 
             await _context.Khoa.AddAsync(obj);
-            await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(Khoa obj)
@@ -72,7 +66,6 @@ namespace demo_netcore_mvc.Repositories
             existing.DienThoai = obj.DienThoai;
 
             _context.Khoa.Update(existing);
-            await _context.SaveChangesAsync();
         }
     }
 }

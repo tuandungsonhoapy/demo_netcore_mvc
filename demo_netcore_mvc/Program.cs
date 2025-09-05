@@ -3,6 +3,7 @@ using demo_netcore_mvc.IRepositories;
 using demo_netcore_mvc.IService;
 using demo_netcore_mvc.Repositories;
 using demo_netcore_mvc.Services;
+using demo_netcore_mvc.UnitOfWork;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
@@ -21,13 +22,14 @@ builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IHashingService, HashingService>();
 builder.Services.AddScoped<IDetaiRepository, DeTaiRepository>();
 builder.Services.AddScoped<IHuongDanRepository, HuongDanRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Account/Login";
         options.LogoutPath = "/Account/Logout";
-        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.AccessDeniedPath = "/Home";
         options.ExpireTimeSpan = TimeSpan.FromDays(1);
         options.SlidingExpiration = true;
     });

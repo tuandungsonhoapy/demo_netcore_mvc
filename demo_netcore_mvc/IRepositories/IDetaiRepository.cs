@@ -8,7 +8,7 @@ namespace demo_netcore_mvc.IRepositories
     {
         public Task<List<NamHocData>> GetAllNamHoc();
 
-        public Task<List<SinhVien_DeTai_HK_Data>> GetSVThamGiaTheoKy(int MaSV, string NamHoc, byte HocKy);
+        public Task<List<DeTai>> GetSVThamGiaTheoKy(int MaSV, string NamHoc, byte HocKy);
 
         public Task<List<DeTai>> MyDeTai(DeTai_MyDeTai_Queries requestParams);
     }

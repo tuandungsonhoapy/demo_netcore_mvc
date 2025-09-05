@@ -31,7 +31,7 @@
         <dd class="col-sm-9">@Model.NoiThucTap</dd>
 
         <dt class="col-sm-3">Kinh phí</dt>
-        <dd class="col-sm-9">@Model.KinhPhi</dd>
+        <dd class="col-sm-9">@FormatHelper.FormatCurrency(Model.KinhPhi)</dd>
 
         <dt class="col-sm-3">Tham gia</dt>
         <dd class="col-sm-9">@Model.SoLuong/@Model.ToiDa</dd>
@@ -99,7 +99,7 @@
         }
     </tbody>
 </table>
-<a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+<a href="@ViewBag.ReturnUrl" class="btn btn-secondary">Quay lại</a>
 
 <!-- Modal Chấm Điểm -->
 <div class="modal fade" id="chamDiemModal" tabindex="-1" aria-labelledby="chamDiemModalLabel" aria-hidden="true">

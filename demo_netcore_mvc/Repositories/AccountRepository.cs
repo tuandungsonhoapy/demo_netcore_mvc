@@ -3,7 +3,6 @@ using demo_netcore_mvc.IRepositories;
 using demo_netcore_mvc.IService;
 using demo_netcore_mvc.Models;
 using demo_netcore_mvc.RequestData;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace demo_netcore_mvc.Repositories
@@ -37,11 +36,9 @@ namespace demo_netcore_mvc.Repositories
         public async Task<Account?> GetByUsername(string username)
         {
             var account = await _context.Set<Account>()
-            .FromSqlRaw("EXEC SP_Account_GetByUsername @Username", new SqlParameter("@Username", username))
-            .AsNoTracking()
-            .ToListAsync();
+                .FirstOrDefaultAsync(a => a.Username == username);
 
-            return account.FirstOrDefault();
+            return account;
         }
 
         public async Task InsertAsync(Account obj)

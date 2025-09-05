@@ -57,7 +57,6 @@ namespace demo_netcore_mvc.Repositories
         public async Task InsertAsync(HuongDan obj)
         {
             await this._context.HuongDan.AddAsync(obj);
-            await this._context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(HuongDan obj)
@@ -67,7 +66,6 @@ namespace demo_netcore_mvc.Repositories
             if (hd != null)
             {
                 hd.KetQua = obj.KetQua;
-                await this._context.SaveChangesAsync();
             }
         }
     }
