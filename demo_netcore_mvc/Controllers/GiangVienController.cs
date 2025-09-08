@@ -143,6 +143,147 @@ namespace demo_netcore_mvc.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> ExportExcelSinhVienTheoGiangVien(GiangVien_GetAll_Param requestParam)
+        {
+            var giangViens = await _unitOfWork.GiangVienRepository.GetAllAsync(requestParam);
+
+            var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "templates", "SinhVienTheoGV_Template.xlsx");
+
+            // Khuyến nghị: đọc vào MemoryStream để tránh lock file ~$
+            byte[] fileBytes = System.IO.File.ReadAllBytes(templatePath);
+            using var mem = new MemoryStream(fileBytes);
+            using (var package = new ExcelPackage(mem))
+            {
+                var worksheet = package.Workbook.Worksheets[0];
+                if (worksheet == null)
+                    return BadRequest("Không tìm thấy sheet trong template.");
+
+                int colCount = worksheet.Dimension.End.Column;
+                int startRow = 2; // dữ liệu bắt đầu từ hàng 2
+                int currentRow = startRow;
+
+                // Xác định trước header (lowercase) cho nhanh
+                var headers = Enumerable.Range(1, colCount)
+                    .ToDictionary(c => c, c => (worksheet.Cells[1, c].Text ?? "").Trim().ToLower());
+
+                // Tập cột thuộc nhóm Giảng viên (sẽ tự động được điền khi match các case GV)
+                var gvCols = new HashSet<int>();
+
+                foreach (var gv in giangViens)
+                {
+                    var huongDans = gv.DeTais?.SelectMany(dt => dt.HuongDans).ToList()
+                                    ?? new List<HuongDan>();
+
+                    int soSv = huongDans.Count > 0 ? huongDans.Count : 1;
+                    int startGroupRow = currentRow;
+                    int endGroupRow = currentRow + soSv - 1;
+
+                    // Đổ dữ liệu (nếu không có SV vẫn tạo 1 dòng)
+                    foreach (var hd in huongDans.DefaultIfEmpty())
+                    {
+                        var sv = hd?.SinhVien;
+
+                        for (int col = 1; col <= colCount; col++)
+                        {
+                            string header = headers[col];
+
+                            switch (header)
+                            {
+                                // ===== GIẢNG VIÊN =====
+                                case "mã giảng viên":
+                                case "ma giang vien":
+                                case "mã gv":
+                                case "ma gv":
+                                    worksheet.Cells[currentRow, col].Value = gv.MaGV;
+                                    gvCols.Add(col);
+                                    break;
+
+                                case "họ tên giảng viên":
+                                case "ho ten giang vien":
+                                case "họ tên gv":
+                                case "ho ten gv":
+                                    worksheet.Cells[currentRow, col].Value = gv.HoTenGV;
+                                    gvCols.Add(col);
+                                    break;
+
+                                case "lương":
+                                case "luong":
+                                    worksheet.Cells[currentRow, col].Value = gv.Luong; // <-- fix
+                                    gvCols.Add(col);
+                                    break;
+
+                                case "khoa gv":
+                                case "khoa giang vien":
+                                case "khoa giảng viên":
+                                    worksheet.Cells[currentRow, col].Value = gv.Khoa?.TenKhoa;
+                                    gvCols.Add(col);
+                                    break;
+
+                                // ===== SINH VIÊN =====
+                                case "mssv":
+                                case "ma sv":
+                                    worksheet.Cells[currentRow, col].Value = sv?.MaSV;
+                                    break;
+
+                                case "họ tên sv":
+                                case "ho ten sv":
+                                    worksheet.Cells[currentRow, col].Value = sv?.HoTenSV;
+                                    break;
+
+                                case "năm sinh":
+                                case "nam sinh":
+                                    worksheet.Cells[currentRow, col].Value = sv?.NamSinh.ToString("dd/MM/yyyy");
+                                    break;
+
+                                case "quê quán":
+                                case "que quan":
+                                    worksheet.Cells[currentRow, col].Value = sv?.QueQuan;
+                                    break;
+
+                                case "khoa sv":
+                                case "khoa sinh vien":
+                                    worksheet.Cells[currentRow, col].Value = sv?.Khoa?.TenKhoa;
+                                    break;
+
+                                case "đề tài":
+                                case "de tai":
+                                    worksheet.Cells[currentRow, col].Value = hd?.DeTai?.TenDT;
+                                    break;
+
+                                default:
+                                    break;
+                            }
+                        }
+
+                        currentRow++;
+                    }
+
+                    // ===== MERGE các cột GIẢNG VIÊN cho nhóm này =====
+                    if (soSv > 1 && gvCols.Count > 0)
+                    {
+                        foreach (var col in gvCols)
+                        {
+                            worksheet.Cells[startGroupRow, col, endGroupRow, col].Merge = true;
+                            worksheet.Cells[startGroupRow, col, endGroupRow, col]
+                                .Style.VerticalAlignment = OfficeOpenXml.Style.ExcelVerticalAlignment.Center;
+                        }
+                    }
+                }
+
+                worksheet.Cells.AutoFitColumns();
+
+                using var outStream = new MemoryStream();
+                package.SaveAs(outStream);
+                outStream.Position = 0;
+
+                string fileName = $"SinhVienTheoGiangVien_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+                return File(outStream.ToArray(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName);
+            }
+        }
+
         // GET: GiangVienController/Details/5
         public async Task<ActionResult> Details(int id)
         {
