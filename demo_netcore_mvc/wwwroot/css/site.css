@@ -65,3 +65,18 @@ th {
         margin: 0;
     }
 
+.e-grid .e-headercell {
+    font-size: 16px !important;
+    font-weight: bold !important;
+}
+
+.e-bigger {
+    font-size: x-large;
+}
+
+/*BreadCrumb*/
+.e-breadcrumb a, .e-breadcrumb a:hover {
+    text-decoration: none !important;
+    color: inherit !important;
+}
+

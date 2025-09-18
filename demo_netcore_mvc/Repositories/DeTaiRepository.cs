@@ -72,6 +72,74 @@ namespace demo_netcore_mvc.Repositories
                 .FirstOrDefaultAsync(dt => dt.MaDT == maDT);
         }
 
+        public async Task<List<ObjectData.DoughnutChartData>> GetDeTaiCountByKhoa(Dashboard_Params pars)
+        {
+            var latestDeTais = await GetAllAsync(new DeTai_GetAll_Param
+            {
+                NamHoc = pars.NamHoc,
+                HocKy = pars.HocKy == 0 ? null : pars.HocKy,
+                MaKhoa = pars.MaKhoa
+            }) ?? new List<DeTai>();
+
+            var result = latestDeTais
+                .GroupBy(dt => new
+                {
+                    dt.GiangVien?.Khoa?.MaKhoa,
+                    dt.GiangVien?.Khoa?.TenKhoa
+                })
+                .Select(g => new ObjectData.DoughnutChartData
+                {
+                    xValue = g.Key.TenKhoa ?? "Chưa xác định",
+                    yValue = g.Count(),
+                    DataLabel = $"{g.Key.TenKhoa ?? "Chưa xác định"}: {g.Count()}"
+                })
+                .ToList();
+
+            // Chuẩn hóa yValue để tổng bằng 100 (nếu cần)
+            if (!result.Any())
+            {
+                // Thêm dữ liệu mặc định nếu không có kết quả
+                result.Add(new ObjectData.DoughnutChartData
+                {
+                    xValue = "Không có dữ liệu",
+                    yValue = 100,
+                    DataLabel = "Không có dữ liệu: 100%"
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<List<DeTai>> GetLatestHocKyDeTais(Dashboard_Params pars)
+        {
+            var query = _context.DeTai
+                .Include(dt => dt.GiangVien)
+                    .ThenInclude(gv => gv.Khoa)
+                .Include(dt => dt.HuongDans)
+                    .ThenInclude(hd => hd.SinhVien)
+                .AsNoTracking();
+
+            // Áp dụng lọc NamHoc nếu không null
+            if (!string.IsNullOrEmpty(pars.NamHoc))
+            {
+                query = query.Where(dt => dt.NamHoc == pars.NamHoc);
+            }
+
+            // Áp dụng lọc HocKy nếu không null
+            if (pars.HocKy.HasValue && pars.HocKy != 0)
+            {
+                query = query.Where(dt => dt.HocKy == pars.HocKy);
+            }
+
+            // Áp dụng lọc MaKhoa nếu không null
+            if (!string.IsNullOrEmpty(pars.MaKhoa))
+            {
+                query = query.Where(dt => dt.GiangVien.Khoa.MaKhoa == pars.MaKhoa);
+            }
+
+            return await query.ToListAsync() ?? new List<DeTai>();
+        }
+
         public async Task<List<DeTai>> GetSVThamGiaTheoKy(int MaSV, string NamHoc, byte HocKy)
         {
             return await _context.DeTai

@@ -35,5 +35,13 @@ namespace demo_netcore_mvc.Helper
                 return value.ToString("0", CultureInfo.InvariantCulture);
             }
         }
+
+        /// <summary>
+        /// Định dạng số với dấu chấm phân cách hàng nghìn, ví dụ: 2000000 -> "2.000.000"
+        /// </summary>
+        public static string FormatNumber(decimal value)
+        {
+            return string.Format(CultureInfo.GetCultureInfo("vi-VN"), "{0:N0}", value);
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using demo_netcore_mvc.IService;
+﻿using demo_netcore_mvc.Dto;
+using demo_netcore_mvc.IService;
 using demo_netcore_mvc.Models;
 using demo_netcore_mvc.ObjectData;
 using demo_netcore_mvc.RequestData;
@@ -8,6 +9,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using OfficeOpenXml;
+using Syncfusion.EJ2.Base;
+using Syncfusion.XlsIO;
+using System.Data;
 
 namespace demo_netcore_mvc.Controllers
 {
@@ -23,14 +27,50 @@ namespace demo_netcore_mvc.Controllers
             _hashingService = hashingService;
         }
 
+        [HttpPost]
+        public async Task<IActionResult> GetGiangViens([FromBody] DataManagerRequest dm)
+        {
+            var list = await _unitOfWork.GiangVienRepository.GetAllAsync(new GiangVien_GetAll_Param());
+
+            var result = new List<GiangVienDto>();
+
+            foreach (var item in list)
+            {
+                result.Add(new GiangVienDto
+                {
+                    MaGV = item.MaGV,
+                    HoTenGV = item.HoTenGV,
+                    Luong = item.Luong,
+                    MaKhoa = item.MaKhoa,
+                    TenKhoa = item.Khoa?.TenKhoa
+                });
+            }
+
+            return Json(new { result = result, count = result.Count });
+        }
+
         // GET: GiangVienController
         public async Task<ActionResult> Index(GiangVien_GetAll_Param requestParams)
         {
             var list = await _unitOfWork.GiangVienRepository.GetAllAsync(requestParams);
 
+            var result = new List<GiangVienDto>();
+
+            foreach (var item in list)
+            {
+                result.Add(new GiangVienDto
+                {
+                    MaGV = item.MaGV,
+                    HoTenGV = item.HoTenGV,
+                    Luong = item.Luong,
+                    MaKhoa = item.MaKhoa,
+                    TenKhoa = item.Khoa?.TenKhoa
+                });
+            }
+
             var model = new GiangVienViewModel
             {
-                GiangViens = list,
+                GiangViens = result,
                 MaKhoa = requestParams.MaKhoa
             };
 
@@ -38,7 +78,76 @@ namespace demo_netcore_mvc.Controllers
 
             ViewBag.KhoaList = new SelectList(khoas, "MaKhoa", "TenKhoa", requestParams.MaKhoa);
 
+            ViewBag.Khoas = khoas;
+
             return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ExportExcel(GiangVien_GetAll_Param requestParam)
+        {
+            var data = await _unitOfWork.GiangVienRepository.GetAllAsync(requestParam);
+
+            // DataTable gốc, có đủ các cột
+            DataTable dt = new DataTable();
+            dt.Columns.Add("Mã giảng viên");
+            dt.Columns.Add("Họ tên giảng viên");
+            dt.Columns.Add("Lương");
+            dt.Columns.Add("Khoa");
+
+            foreach (var g in data)
+            {
+                dt.Rows.Add(g.MaGV, g.HoTenGV, g.Luong, g.Khoa?.TenKhoa);
+            }
+
+            using (ExcelEngine excelEngine = new ExcelEngine())
+            {
+                IApplication application = excelEngine.Excel;
+                application.DefaultVersion = ExcelVersion.Excel2016;
+
+                using FileStream inputStream = new FileStream("wwwroot/templates/GiangVien_Template.xlsx", FileMode.Open, FileAccess.Read);
+                IWorkbook workbook = application.Workbooks.Open(inputStream);
+                IWorksheet sheet = workbook.Worksheets[0];
+
+                int headerRow = 1; // dòng chứa header trong template
+                int startRow = headerRow + 1;
+                int startCol = 1;
+                int colCount = sheet.UsedRange.LastColumn;
+
+                // Tạo DataTable theo đúng thứ tự cột trong template
+                DataTable orderedDt = new DataTable();
+
+                for (int col = 1; col <= colCount; col++)
+                {
+                    string header = sheet[headerRow, col].Text.Trim();
+
+                    // Nếu DataTable gốc có cột này thì thêm vào orderedDt
+                    if (dt.Columns.Contains(header))
+                    {
+                        orderedDt.Columns.Add(header);
+                    }
+                }
+
+                // Copy dữ liệu theo đúng thứ tự cột
+                foreach (DataRow row in dt.Rows)
+                {
+                    var newRow = orderedDt.NewRow();
+                    foreach (DataColumn col in orderedDt.Columns)
+                    {
+                        newRow[col.ColumnName] = row[col.ColumnName];
+                    }
+                    orderedDt.Rows.Add(newRow);
+                }
+
+                // Đổ orderedDt vào Excel theo thứ tự cột template
+                sheet.ImportDataTable(orderedDt, false, startRow, startCol);
+
+                using MemoryStream stream = new MemoryStream();
+                workbook.SaveAs(stream);
+                return File(stream.ToArray(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "GiangVien.xlsx");
+            }
         }
 
         [HttpGet]
@@ -304,6 +413,8 @@ namespace demo_netcore_mvc.Controllers
 
             ViewBag.KhoaList = new SelectList(khoas, "MaKhoa", "TenKhoa");
 
+            ViewBag.Khoas = khoas;
+
             return View();
         }
 
@@ -345,15 +456,54 @@ namespace demo_netcore_mvc.Controllers
 
                 ViewBag.KhoaList = new SelectList(khoas, "MaKhoa", "TenKhoa");
 
+                ViewBag.Khoas = khoas;
+
                 return View(model);
             }
         }
 
+        // POST: GiangVienController/Insert
+        //[HttpPost]
+        //public async Task<ActionResult> Insert([FromBody] CRUDModel<GiangVien> value)
+        //{
+        //    if (value.Value != null)
+        //    {
+        //        var model = value.Value;
+
+        //        var account = new Account
+        //        {
+        //            Username = model.Username, // nhớ map Username từ Grid hoặc bỏ nếu bạn không cho nhập
+        //            Password = _hashingService.HashPassword(model.Password ?? "123456"), // default nếu Grid không có field
+        //            Role = "GiangVien"
+        //        };
+
+        //        var gv = new GiangVien
+        //        {
+        //            HoTenGV = model.HoTenGV,
+        //            Luong = model.Luong,
+        //            MaKhoa = model.MaKhoa,
+        //            Account = account
+        //        };
+
+        //        await _unitOfWork.GiangVienRepository.InsertAsync(gv);
+        //        await _unitOfWork.SaveChangesAsync();
+
+        //        return Json(gv); // trả lại object vừa thêm để grid cập nhật
+        //    }
+        //    return Json(null);
+        //}
+
         // GET: GiangVienController/Edit/5
-        public ActionResult Edit(int id)
+        public async Task<ActionResult> Edit(int id)
         {
-            var list = this._unitOfWork.GiangVienRepository.GetByIdAsync(id);
-            return View();
+            var model = await this._unitOfWork.GiangVienRepository.GetByIdAsync(id);
+
+            var khoas = await this._unitOfWork.KhoaRepository.GetAllAsync(new object());
+
+            ViewBag.ListKhoa = khoas;
+            ViewBag.Khoas = khoas;
+
+            return View(model);
         }
 
         // POST: GiangVienController/Edit/5

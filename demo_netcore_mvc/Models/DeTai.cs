@@ -33,8 +33,12 @@ namespace demo_netcore_mvc.Models
         [Display(Name = "Mở đăng ký")]
         public bool IsOpen { get; set; } = false;
 
+
+        public string MaKhoa { get; set; }
+
         public ICollection<HuongDan> HuongDans { get; set; }
         public GiangVien GiangVien { get; set; }
+        public Khoa Khoa { get; set; }
 
         [NotMapped]
         public int SoLuong => HuongDans?.Count ?? 0;

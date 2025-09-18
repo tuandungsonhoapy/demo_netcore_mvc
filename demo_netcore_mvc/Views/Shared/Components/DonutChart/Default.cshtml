@@ -1,0 +1,32 @@
+﻿@model demo_netcore_mvc.Configs.ChartConfig.DonutChartConfig
+@using Syncfusion.EJ2
+
+
+<div class="control-section" align="center">
+    <ejs-accumulationchart id="container_@Guid.NewGuid().ToString()" load="donutLoad" enableSmartLabels="true" enableBorderOnMouseMove="false">
+        <e-accumulationchart-legendsettings visible="false" position="@Syncfusion.EJ2.Charts.LegendPosition.Top">
+        </e-accumulationchart-legendsettings>
+        <e-accumulationchart-tooltipsettings enable="true" format="@Model.TooltipFormat" header="" enableHighlight="true"></e-accumulationchart-tooltipsettings>
+        <e-accumulationchart-centerlabel text="@Model.CenterLabelText" hoverTextFormat="@Model.HoverTextFormat">
+        </e-accumulationchart-centerlabel>
+        <e-accumulation-series-collection>
+            <e-accumulation-series xName="xValue" yName="yValue" innerRadius="65%" name="Project" borderRadius="3" explodeOffset="10%" explodeIndex="0" startAngle="@Model.StartAngle" dataSource="@Model.DataSource">
+                <e-accumulationseries-datalabel visible="true" name="DataLabel" position="@Syncfusion.EJ2.Charts.AccumulationLabelPosition.Outside">
+                    <e-font fontWeight="600"></e-font>
+                    <e-connectorstyle type="@Syncfusion.EJ2.Charts.ConnectorType.Curve" length="@Model.ConnectorLength"></e-connectorstyle>
+                </e-accumulationseries-datalabel>
+                <e-accumulationseries-border width="1" color="#ffffff"></e-accumulationseries-border>
+            </e-accumulation-series>
+        </e-accumulation-series-collection>
+    </ejs-accumulationchart>
+</div>
+
+<script>
+    function donutLoad(args) {
+        args.accumulation.series[0].radius = ej.base.Browser.isDevice ? '@Model.MobileRadius' : '@Model.Radius';
+        args.accumulation.series[0].startAngle = ej.base.Browser.isDevice ? @Model.MobileStartAngle : @Model.StartAngle;
+        args.accumulation.centerLabel.textStyle.size = ej.base.Browser.isDevice ? '@Model.MobileCenterLabelFontSize' : '@Model.CenterLabelFontSize';
+        args.accumulation.series[0].dataLabel.connectorStyle.length = ej.base.Browser.isDevice ? '@Model.MobileConnectorLength' : '@Model.ConnectorLength';
+        args.accumulation.series[0].dataLabel.font.size = ej.base.Browser.isDevice ? '@Model.MobileDataLabelFontSize' : '@Model.DataLabelFontSize';
+    }
+</script>

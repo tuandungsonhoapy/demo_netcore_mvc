@@ -1,8 +1,145 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model demo_netcore_mvc.ViewModels.DashboardViewModel
+@using Syncfusion.EJ2
+@using demo_netcore_mvc.Helper
+@using demo_netcore_mvc.Models.ColumnChart
+
+@{
+
+    var totalDeTai = Model.DeTaiCountByKhoaConfig.DataSource.Sum(dt => dt.yValue);
+    var isAdmin = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Admin");
+    ViewData["PageTitle"] = isAdmin ? "Dashboard" : "Trang chủ";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+@if (isAdmin)
+{
+    <div class="container-fluid py-4">
+        <form method="get" asp-action="Index" class="row g-3 mb-5">
+            <div class="col-2">
+                <ejs-combobox value="@Model.MaKhoa" id="makhoa" dataSource="@ViewBag.Khoas" placeholder="Chọn khoa" popupHeight="220px" floatLabelType="Always">
+                    <e-combobox-fields value="MaKhoa" text="TenKhoa"></e-combobox-fields>
+                </ejs-combobox>
+            </div>
+            <div class="col-2">
+                <ejs-combobox value="@Model.NamHoc" id="namhoc" dataSource="@ViewBag.NamHocList" placeholder="Chọn năm học" popupHeight="220px" floatLabelType="Always">
+                    <e-combobox-fields value="NamHoc"></e-combobox-fields>
+                </ejs-combobox>
+            </div>
+            <div class="col-2">
+                <ejs-combobox value="@Model.HocKy" id="hocky" dataSource="@ViewBag.HocKyList" placeholder="Chọn học kỳ" popupHeight="220px" floatLabelType="Always">
+                    <e-combobox-fields value="Value" text="Text"></e-combobox-fields>
+                </ejs-combobox>
+            </div>
+            <div class="col-auto align-self-end">
+                <ejs-button id="submit" type="submit" cssClass="e-primary" content="Lọc" iconCss="fa-solid fa-filter"></ejs-button>
+            </div>
+        </form>
+
+        <!-- Optional: Thêm các widget hoặc số liệu thống kê -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="card shadow-sm text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Tổng đề tài</h6>
+                        <h3 class="text-primary">@totalDeTai</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card shadow-sm text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Tổng kinh phí</h6>
+                        <h3 class="text-success">@FormatHelper.FormatShortNumber(Model.TongKinhPhi)</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card shadow-sm text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Tổng sinh viên tham gia</h6>
+                        <h3 class="text-info">@FormatHelper.FormatNumber(Model.TongSVThamGia)</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card shadow-sm text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Data Updated</h6>
+                        <h3 class="text-secondary">2025</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Count De Tai By Khoa Chart Card -->
+            <div class="col-lg-6 col-md-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Số lượng đề tài theo khoa   </h5>
+                    </div>
+                    <div class="card-body">
+                        @await Component.InvokeAsync("DonutChart", Model.DeTaiCountByKhoaConfig)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pie Chart Card -->
+            <div class="col-lg-6 col-md-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Số lượng sinh viên theo khoa</h5>
+                    </div>
+                    <div class="card-body">
+                        @await Component.InvokeAsync("PieChart", Model.PieChartConfig)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column Chart Card -->
+            <div class="col-md-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">Thống kê sinh viên tham gia đề tài theo khoa</h5>
+                    </div>
+                    <div class="card-body">
+                        @{
+                            var seriesList = new List<SeriesInfo>
+                                        {
+                                        new SeriesInfo { YName = "Walnuts", Name = "Số lượng sinh viên tham gia" },
+                                        new SeriesInfo { YName = "Almonds", Name = "Tổng slot mở các đề tài của khoa" }
+                                        };
+                        }
+                        @await Component.InvokeAsync("ColumnChart", new
+                        {
+                            dataSource = Model.ColumnChartConfig.DataSource,
+                                        xName = Model.ColumnChartConfig.XName,
+                                        series = Model.ColumnChartConfig.Series,
+                                        title = Model.ColumnChartConfig.Title,
+                                        subTitle = Model.ColumnChartConfig.SubTitle,
+                                        PrimaryYAxis = Model.ColumnChartConfig.PrimaryYAxis
+                                        })
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+} 
+
+<style>
+    .card {
+        border-radius: 8px;
+        transition: transform 0.2s;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+    .card-header {
+        border-bottom: none;
+    }
+
+    .control-section {
+        padding: 15px;
+    }
+</style>

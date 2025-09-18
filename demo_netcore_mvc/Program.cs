@@ -6,6 +6,7 @@ using demo_netcore_mvc.Services;
 using demo_netcore_mvc.UnitOfWork;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using OfficeOpenXml;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,8 +35,15 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true;
     });
 
+builder.Services.AddControllersWithViews()
+    .AddNewtonsoftJson(options =>
+        options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+    );
+
+
 // Set EPPlus license context
 ExcelPackage.License.SetNonCommercialPersonal("TuanDung");
+Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjGyl/Vkd+XU9FcVRDX3xKf0x/TGpQb19xflBPallYVBYiSV9jS3tTf0RiWXtfcXBQQWRYUk91Xg==");
 
 var app = builder.Build();
 

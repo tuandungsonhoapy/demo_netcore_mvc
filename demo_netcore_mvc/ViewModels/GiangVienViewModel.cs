@@ -1,4 +1,4 @@
-﻿using demo_netcore_mvc.Models;
+﻿using demo_netcore_mvc.Dto;
 
 namespace demo_netcore_mvc.ViewModels
 {
@@ -6,6 +6,6 @@ namespace demo_netcore_mvc.ViewModels
     {
         public string? MaKhoa { get; set; }
 
-        public List<GiangVien> GiangViens { get; set; }
+        public List<GiangVienDto> GiangViens { get; set; }
     }
 }

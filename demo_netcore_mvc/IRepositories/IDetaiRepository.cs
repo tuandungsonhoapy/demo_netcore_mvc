@@ -11,5 +11,9 @@ namespace demo_netcore_mvc.IRepositories
         public Task<List<DeTai>> GetSVThamGiaTheoKy(int MaSV, string NamHoc, byte HocKy);
 
         public Task<List<DeTai>> MyDeTai(DeTai_MyDeTai_Queries requestParams);
+
+        public Task<List<DeTai>> GetLatestHocKyDeTais(Dashboard_Params pars);
+
+        public Task<List<DoughnutChartData>> GetDeTaiCountByKhoa(Dashboard_Params pars);
     }
 }

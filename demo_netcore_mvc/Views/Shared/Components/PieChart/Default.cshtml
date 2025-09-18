@@ -1,0 +1,25 @@
+﻿@model demo_netcore_mvc.Configs.ChartConfig.PieChartConfig
+
+@using Syncfusion.EJ2
+    <div class="control-section" align="center">
+        <ejs-circularchart3d id="donutContainer" load="pieChartLoad" title="@Model.Title" enableRotation="true" tilt="-45">
+            <e-circularchart3d-tooltipsettings enable="true" header="" format="@Model.TooltipFormat">
+            </e-circularchart3d-tooltipsettings>
+            <e-circularchart3d-legendsettings visible="false">
+            </e-circularchart3d-legendsettings>
+            <e-circularchart3d-series-collection>
+                <e-circularchart3d-series dataSource="@Model.DataSource" xName="X" yName="Y" innerRadius="0%" explode="true">
+                    <e-circularchart3d-series-datalabel visible="true" position="@Syncfusion.EJ2.Charts.CircularChart3DLabelPosition.Outside" name="X">
+                        <e-font fontWeight="600"></e-font>
+                    </e-circularchart3d-series-datalabel>
+                </e-circularchart3d-series>
+            </e-circularchart3d-series-collection>
+        </ejs-circularchart3d>
+    </div>
+    <script>
+        function pieChartLoad(args) {
+            args.chart.series[0].radius = ej.base.Browser.isDevice ? "45%" : "75%";
+            args.chart.series[0].dataLabel.connectorStyle.length = ej.base.Browser.isDevice ? "20px" : "40px";
+            args.chart.series[0].explodeOffset = ej.base.Browser.isDevice ? "10%" : "30%";
+        }
+    </script>

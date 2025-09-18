@@ -6,16 +6,17 @@
     <h2>Quản lý thông tin sinh viên</h2>
 
     <form method="get" asp-action="Index" class="row g-3 mb-3">
+
         <div class="col-auto">
-            <label asp-for=MaGV" class="form-label">Giảng viên hướng dẫn:</label>
-            <select asp-for="MaGV" asp-items="ViewBag.GiangVienList" class="form-select select2">
+            <label asp-for=MaKhoa" class="form-label">Khoa:</label>
+            <select asp-for="MaKhoa" asp-items="ViewBag.KhoaList" class="form-select select2">
                 <option value="">-- Tất cả --</option>
             </select>
         </div>
 
         <div class="col-auto">
-            <label asp-for=MaKhoa" class="form-label">Khoa:</label>
-            <select asp-for="MaKhoa" asp-items="ViewBag.KhoaList" class="form-select select2">
+            <label asp-for=MaGV" class="form-label">Giảng viên hướng dẫn:</label>
+            <select asp-for="MaGV" asp-items="ViewBag.GiangVienList" class="form-select select2">
                 <option value="">-- Tất cả --</option>
             </select>
         </div>

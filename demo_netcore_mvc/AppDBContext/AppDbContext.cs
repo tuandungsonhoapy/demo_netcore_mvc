@@ -61,6 +61,11 @@ namespace demo_netcore_mvc.AppDBContext
                 .WithMany(gv => gv.DeTais)
                 .HasForeignKey(dt => dt.NguoiHuongDan);
 
+            modelBuilder.Entity<DeTai>()
+                .HasOne(dt => dt.Khoa)
+                .WithMany(k => k.DeTais)
+                .HasForeignKey(dt => dt.MaKhoa);
+
             // HuongDan
             modelBuilder.Entity<HuongDan>()
                 .HasKey(hd => new { hd.MaSV, hd.MaDT });

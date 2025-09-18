@@ -1,62 +1,79 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@model demo_netcore_mvc.ViewModels.GiangVienViewModel
+﻿@model demo_netcore_mvc.ViewModels.GiangVienViewModel
+@{
+    ViewData["PageTitle"] = "Danh Sách Giảng Viên";
+    var ej2Toolbar = new List<string>() { "ExcelExport" };
+    ViewData["PageActionAddUrl"] = Url.Action("Create", "GiangVien");
+}
 
-<div>
-    <h2>Quản lý thông tin giảng viên</h2>
-    <form method="get" asp-action="Index" class="row g-3 mb-3">
-        <div class="col-auto">
-            <label asp-for=MaKhoa" class="form-label">Khoa:</label>
-            <select asp-for="MaKhoa" asp-items="ViewBag.KhoaList" class="form-select select2">
-                <option value="">-- Tất cả --</option>
-            </select>
+<form method="get" asp-action="Index" class="row g-3 mb-3">
+    <div class="col-2">
+        <div id="default">
+            <ejs-combobox value="@Model.MaKhoa" id="makhoa" dataSource="@ViewBag.Khoas" placeholder="Chọn khoa" popupHeight="220px" floatLabelType="Always">
+                <e-combobox-fields value="MaKhoa" text="TenKhoa"></e-combobox-fields>
+            </ejs-combobox>
         </div>
+    </div>
+        
+    <div class="col-auto align-self-end">
+        <ejs-button id="submit" type="submit" cssClass="e-primary" content="Lọc" iconCss="fa-solid fa-filter"></ejs-button>
+    </div>
+</form>
 
-        <div class="col-auto align-self-end">
-            <button type="submit" class="btn btn-primary">Lọc</button>
-            <a asp-action="ExportExcelSinhVienTheoGiangVien" asp-route-MaKhoa="@Model.MaKhoa" class="btn btn-success">Xuất Excel</a>
-            <a asp-action="ExportWord" asp-route-MaKhoa="@Model.MaKhoa" class="btn btn-secondary">Xuất Word</a>
-        </div>
-    </form>
-    <p>
-        <a asp-action="Create" class="btn btn-primary">Thêm giảng viên</a>
-    </p>
-    <table class="table table-striped table-bordered">
-        <thead class="table-light">
-            <tr>
-                <th>Stt</th>
-                <th>Mã giảng viên</th>
-                <th>Họ tên</th>
-                <th>Lương</th>
-                <th>Khoa</th>
-                <th style="width: 220px;"></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var gv in Model.GiangViens)
-            {
-                int index = Model.GiangViens.ToList().IndexOf(gv) + 1;
-                <tr>
-                    <td>@index</td>
-                    <td>@gv.MaGV</td>
-                    <td>@gv.HoTenGV</td>
-                    <td>@gv.Luong.ToString("C")</td>
-                    <td>@gv.Khoa?.TenKhoa</td>
-                    <td>
-                        <a asp-action="Details" asp-route-id="@gv.MaGV" class="btn btn-info btn-sm">Chi tiết</a>
-                        <a asp-action="Edit" asp-route-id="@gv.MaGV" class="btn btn-warning btn-sm">Sửa</a>
-                        <form id="deleteForm-@gv.MaGV" asp-action="Delete" asp-route-id="@gv.MaGV" method="post" style="display:none;">
-                            @Html.AntiForgeryToken()
-                        </form>
+<ejs-grid id="grid" dataSource="@Model.GiangViens" allowPaging="true"
+          allowGrouping="true" allowExcelExport="true" toolbar="@(ej2Toolbar)" toolbarClick="onToolbarClick"
+>
+    <e-grid-pagesettings pageSize="10"></e-grid-pagesettings>
+    <e-grid-columns>
+        <e-grid-column field="MaGV" headerText="Mã giảng viên" textAlign="Left"></e-grid-column>
+        <e-grid-column field="HoTenGV" headerText="Họ tên" textAlign="Left"></e-grid-column>
+        <e-grid-column field="Luong" headerText="Lương" textAlign="Left"></e-grid-column>
+        <e-grid-column field="TenKhoa" headerText="Khoa" textAlign="Left"></e-grid-column>
+        <e-grid-column template="#actionTemplate" width="220"></e-grid-column>
+    </e-grid-columns>
+</ejs-grid>
 
-                        <button class="btn btn-danger btn-sm"
-                                onclick="if(confirm('Bạn có chắc chắn muốn xóa giảng viên này không?')) document.getElementById('deleteForm-@gv.MaGV').submit();">
-                            Xóa
-                        </button>
-                    </td>
-                </tr>
+<script id="actionTemplate" type="text/x-template">
+    <a href="/GiangVien/Details/${MaGV}" class="btn btn-sm btn-warning mx-1">
+        <i class="fa-solid fa-eye"></i>
+    </a>
+    <a href="/GiangVien/Edit/${MaGV}" class="btn btn-sm btn-success mx-1">
+        <i class="fa-solid fa-pencil"></i>
+    </a>
+    <button href="/GiangVien/Delete/${MaGV}" class="btn btn-sm btn-danger mx-1"
+        onclick="deleteGiangVien(event, '${MaGV}')"
+    >
+        <i class="fa-solid fa-trash"></i>
+    </button>
+</script>
+
+<script>
+    function onToolbarClick(args) {
+        if (args.item.id === "grid_excelexport") {
+            var comboValue = document.getElementById("makhoa").ej2_instances[0].value;
+
+            var url = '/GiangVien/ExportExcel';
+            if (comboValue) {
+                url += '?MaKhoa=' + comboValue;
             }
-        </tbody>
-    </table>
-</div>
+
+            window.location.href = url;
+            args.cancel = true;
+        }
+    }
+
+    function deleteGiangVien(event, maGV) {
+        event.preventDefault();
+        if (confirm('Bạn có chắc chắn muốn xóa giảng viên này không?')) {
+            $.ajax({
+                url: '/GiangVien/Delete/' + maGV,
+                type: 'POST',
+                success: function (result) {
+                    location.reload();
+                },
+                error: function (err) {
+                    alert('Đã xảy ra lỗi khi xóa giảng viên.');
+                }
+            });
+        }
+    }
+</script>

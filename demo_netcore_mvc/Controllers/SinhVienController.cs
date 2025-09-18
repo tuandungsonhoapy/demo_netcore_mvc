@@ -32,7 +32,10 @@ namespace demo_netcore_mvc.Controllers
                 MaKhoa = queryParams.MaKhoa
             };
 
-            var giangViens = await this._unitOfWork.GiangVienRepository.GetAllAsync(new object());
+            var giangViens = await this._unitOfWork.GiangVienRepository.GetAllAsync(new GiangVien_GetAll_Param
+            {
+                MaKhoa = queryParams.MaKhoa
+            });
 
             ViewBag.GiangVienList = new SelectList(giangViens, "MaGV", "HoTenGV", queryParams.MaGV);
 

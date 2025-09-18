@@ -17,5 +17,6 @@ namespace demo_netcore_mvc.Models
 
         public ICollection<GiangVien>? GiangViens { get; set; }
         public ICollection<SinhVien>? SinhViens { get; set; }
+        public ICollection<DeTai>? DeTais { get; set; }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using demo_netcore_mvc.AppDBContext;
 using demo_netcore_mvc.IRepositories;
 using demo_netcore_mvc.Models;
+using demo_netcore_mvc.RequestData;
 using Microsoft.EntityFrameworkCore;
 
 namespace demo_netcore_mvc.Repositories
@@ -32,7 +33,37 @@ namespace demo_netcore_mvc.Repositories
 
         public async Task<List<Khoa>> GetAllAsync(object requestData)
         {
-            return await _context.Khoa.AsNoTracking().ToListAsync();
+            return await _context.Khoa.AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<List<Khoa>> GetAllWithStudents(Dashboard_Params pars)
+        {
+            var query = _context.Khoa.AsNoTracking()
+               .Include(k => k.SinhViens)
+               .Include(k => k.DeTais)
+                .ThenInclude(dt => dt.HuongDans)
+               .AsQueryable();
+
+            if (!string.IsNullOrEmpty(pars?.MaKhoa))
+                query = query.Where(k => k.MaKhoa == pars.MaKhoa);
+
+            if (!string.IsNullOrEmpty(pars?.NamHoc))
+                query = query.Where(k => k.DeTais.Any(dt => dt.NamHoc == pars.NamHoc));
+
+            if (pars?.HocKy != null && pars?.HocKy != 0)
+                query = query.Where(k => k.DeTais.Any(dt => dt.HocKy == pars.HocKy));
+
+            var list = await query.AsNoTracking().ToListAsync();
+
+            foreach (var k in list)
+            {
+                k.DeTais = k.DeTais.Where(dt => (string.IsNullOrEmpty(pars.NamHoc) || dt.NamHoc == pars.NamHoc) &&
+                    (pars.HocKy == null || pars.HocKy == 0 || dt.HocKy == pars.HocKy)
+                ).ToList();
+            }
+
+            return list;
         }
 
         public async Task<Khoa?> GetByIdAsync(object id)

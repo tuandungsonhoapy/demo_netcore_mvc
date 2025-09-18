@@ -7,35 +7,32 @@
 
 <form asp-action="Create" method="post">
     <div class="form-group mb-3">
-        <label asp-for="Username" class="form-label"></label>
-        <input asp-for="Username" class="form-control" />
+        <ejs-textbox id="username" placeholder="Tên đăng nhập" ejs-for="Username" floatLabelType="Always"></ejs-textbox>
         <span asp-validation-for="Username" class="text-danger"></span>
     </div>
 
     <div class="form-group mb-3">
-        <label asp-for="Password" class="form-label"></label>
-        <input asp-for="Password" class="form-control" type="password" />
+        <ejs-textbox id="password" placeholder="Mật khẩu" ejs-for="Password" 
+        floatLabelType="Always" type="password"></ejs-textbox>
         <span asp-validation-for="Password" class="text-danger"></span>
     </div>
 
     <div class="form-group mb-3">
-        <label asp-for="HoTenGV" class="form-label"></label>
-        <input asp-for="HoTenGV" class="form-control" />
+        <ejs-textbox id="hotengv" placeholder="Họ tên giảng viên" ejs-for="HoTenGV" floatLabelType="Always"></ejs-textbox>
         <span asp-validation-for="HoTenGV" class="text-danger"></span>
     </div>
 
     <div class="form-group mb-3">
-        <label asp-for="Luong" class="form-label"></label>
-        <input asp-for="Luong" class="form-control" type="number" step="0.01" />
+        <ejs-numerictextbox id="luong" ejs-for="Luong" value="0" placeholder="Lương" floatLabelType="Always" min="0"></ejs-numerictextbox>
         <span asp-validation-for="Luong" class="text-danger"></span>
     </div>
 
     <div class="form-group mb-3">
-        <label asp-for="MaKhoa" class="form-label">Khoa</label>
-        <select asp-for="MaKhoa" class="form-control select2"
-                asp-items="@ViewBag.KhoaList">
-            <option value="">-- Chọn khoa --</option>
-        </select>
+        <div id="default">
+            <ejs-combobox ejs-for="MaKhoa" floatLabelType="Always" id="country" datasource="@ViewBag.Khoas" placeholder="Chọn khoa" popupheight="220px">
+                <e-combobox-fields value="MaKhoa" text="TenKhoa"></e-combobox-fields>
+            </ejs-combobox>
+        </div>
         <span asp-validation-for="MaKhoa" class="text-danger"></span>
     </div>
 

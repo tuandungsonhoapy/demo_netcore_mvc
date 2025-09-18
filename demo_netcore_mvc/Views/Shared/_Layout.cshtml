@@ -1,4 +1,5 @@
-﻿@{
+﻿@using demo_netcore_mvc.ObjectData
+@{
     var isAdmin = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Admin");
     var isGiangVien = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("GiangVien");
     var isSinhVien = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("SinhVien");
@@ -26,13 +27,22 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - demo_netcore_mvc</title>
+
+    <!-- Syncfusion ASP.NET Core controls styles -->
+    <link rel="stylesheet" href="https://cdn.syncfusion.com/ej2/29.1.33/bootstrap5.css" />
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/demo_netcore_mvc.styles.css" asp-append-version="true" />
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
     @RenderSection("Styles", required: false)
+
+    <!-- Syncfusion ASP.NET Core controls scripts -->
+    <script src="https://cdn.syncfusion.com/ej2/29.1.33/dist/ej2.min.js"></script>
 </head>
 <body>
     <header>
@@ -119,7 +129,7 @@
                         </a>
                         <a class="list-group-item list-group-item-action @(currentController == "DeTai" && currentAction == "MyDeTai" ? "active" : "")"
                            asp-controller="DeTai" asp-action="MyDeTai" asp-route-MaSV="@MaSV">
-                            Đề tài đăng ký
+                            Đề tài đã đăng ký
                         </a>
                         <a class="list-group-item list-group-item-action @(currentController == "DeTai" && currentAction == "DeTaiThamGia" ? "active" : "")"
                            asp-controller="DeTai" asp-action="DeTaiThamGia" asp-route-MaSV="@MaSV">
@@ -130,13 +140,69 @@
             </div>
 
             <!-- Main content -->
+
             <div class="col-md-9 col-lg-10 p-4">
                 <main role="main" class="pb-3">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="d-flex flex-column mb-3">
+                                @* BreadCrumnb *@
+                                @{
+                                    var controller = ViewContext.RouteData.Values["controller"].ToString();
+                                    var action = ViewContext.RouteData.Values["action"].ToString();
+
+                                    var breadcrumbItems = new List<BreadcrumbItem>
+                                                                {
+                                                                new BreadcrumbItem { Text = "Trang chủ", Url = Url.Action("Index", "Home") }
+                                                                };
+
+                                    if (!string.IsNullOrEmpty(controller) && controller.ToLower() != "home")
+                                    {
+                                        breadcrumbItems.Add(new BreadcrumbItem { Text = controller, Url = Url.Action("Index", controller) });
+                                    }
+                                    if (!string.IsNullOrEmpty(action) && action.ToLower() != "index")
+                                    {
+                                        breadcrumbItems.Add(new BreadcrumbItem { Text = action, Url = Url.Action(action, controller) });
+                                    }
+
+                                    // Chỉ hiển thị breadcrumb nếu có ít nhất 2 mục
+                                    if (breadcrumbItems.Count > 1)
+                                    {
+                                        <ejs-breadcrumb id="default-breadcrumb" separatorTemplate="@Html.Raw("<i class='fa-solid fa-angle-right'></i>")">
+                                            <e-breadcrumb-items>
+                                                @foreach (var item in breadcrumbItems)
+                                                {
+                                                    <e-breadcrumb-item text="@item.Text" url="@item.Url"></e-breadcrumb-item>
+                                                }
+                                            </e-breadcrumb-items>
+                                        </ejs-breadcrumb>
+                                    }
+                                }
+                                @*Page Title*@
+                                <div class="d-flex mb-1">
+                                    <div class="flex-grow-1">
+                                        <h2 class="fw-bold">@ViewData["PageTitle"]</h2>
+                                    </div>
+                                    <div> 
+                                        @if (ViewData["PageActionAddUrl"] != null)
+                                        {
+                                            <a href="@ViewData["PageActionAddUrl"]" class="btn btn-primary"><i class="fa-solid fa-plus"></i></a>
+                                        }
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
                     @RenderBody()
                 </main>
             </div>
         </div>
     </div>
+
+    <ejs-toast id="toast_default" showCloseButton="true">
+        <e-toast-position X="Right" Y="Top"></e-toast-position>
+    </ejs-toast>
 
     @* <footer class="border-top footer text-muted mt-3">
         <div class="container">
@@ -144,7 +210,7 @@
         </div>
     </footer> *@
         
-    @await Component.InvokeAsync("Alert", new { type = TempData["AlertType"], message = TempData["AlertMessage"] })
+    @* @await Component.InvokeAsync("Alert", new { type = TempData["AlertType"], message = TempData["AlertMessage"] }) *@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -162,6 +228,60 @@
             });
         });
     </script>
+    <script>
+                document.addEventListener('DOMContentLoaded', function () {
+            var breadcrumbElement = document.getElementById("default-breadcrumb");
+            if (breadcrumbElement) {
+                var breadcrumb = breadcrumbElement.ej2_instances[0];
+                if (breadcrumb && breadcrumb.items && breadcrumb.items.length <= 1) {
+                    breadcrumbElement.style.display = "none";
+                }
+            }
+        });
+
+        var toastObj;
+        document.addEventListener('DOMContentLoaded', function () {
+            toastObj = document.getElementById('toast_default').ej2_instances[0];
+
+            // Lấy dữ liệu từ TempData để hiển thị toast
+            var message = '@TempData["AlertMessage"]';
+            var type = '@TempData["AlertType"]'; // success, error, info, warning
+
+            if (message && message !== '') {
+                var cssClass = '';
+                var icon = '';
+
+                switch (type) {
+                    case 'success':
+                        cssClass = 'e-toast-success';
+                        icon = 'e-icons e-check';
+                        break;
+                    case 'error':
+                        cssClass = 'e-toast-danger';
+                        icon = 'e-icons e-close';
+                        break;
+                    case 'info':
+                        cssClass = 'e-toast-info';
+                        icon = 'e-icons e-info';
+                        break;
+                    case 'warning':
+                        cssClass = 'e-toast-warning';
+                        icon = 'e-icons e-warning';
+                        break;
+                }
+
+                toastObj.show({
+                    title: type.charAt(0).toUpperCase() + type.slice(1),
+                    content: message,
+                    cssClass: cssClass,
+                    timeOut: 3000
+                });
+            }
+        });
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
+
+    <!-- Syncfusion ASP.NET Core Script Manager -->
+    <ejs-scripts></ejs-scripts>
 </body>
 </html>
